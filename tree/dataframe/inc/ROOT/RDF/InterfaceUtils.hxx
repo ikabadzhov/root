@@ -681,8 +681,6 @@ struct IsDeque_t<std::deque<T>> : std::true_type {};
 
 void CheckForDuplicateSnapshotColumns(const ColumnNames_t &cols);
 
-void TriggerRun(ROOT::RDF::RNode &node);
-
 } // namespace RDF
 } // namespace Internal
 
