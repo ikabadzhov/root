@@ -1,7 +1,7 @@
 // Author: Enrico Guiraud, Danilo Piparo CERN  03/2017
 
 /*************************************************************************
- * Copyright (C) 1995-2018, Rene Brun and Fons Rademakers.               *
+ * Copyright (C) 1995-2021, Rene Brun and Fons Rademakers.               *
  * All rights reserved.                                                  *
  *                                                                       *
  * For the licensing terms see $ROOTSYS/LICENSE.                         *
@@ -21,6 +21,7 @@
 #include "ROOT/RDF/RDefinePerSample.hxx"
 #include "ROOT/RDF/RFilter.hxx"
 #include "ROOT/RDF/RLazyDSImpl.hxx"
+#include "ROOT/RDF/RLoopManager.hxx"
 #include "ROOT/RDF/RRange.hxx"
 #include "ROOT/RDF/Utils.hxx"
 #include "ROOT/RResultPtr.hxx"
@@ -105,6 +106,8 @@ class RInterface {
    template <typename T, typename W>
    friend class RInterface;
 
+   friend void RDFInternal::TriggerRun(RNode &node);
+
    std::shared_ptr<Proxied> fProxiedPtr; ///< Smart pointer to the graph node encapsulated by this RInterface.
    ///< The RLoopManager at the root of this computation graph. Never null.
    RLoopManager *fLoopManager;
@@ -128,9 +131,10 @@ public:
    RInterface(RInterface &&) = default;
 
    ////////////////////////////////////////////////////////////////////////////
-   /// \brief Only enabled when building a RInterface<RLoopManager>.
-   template <typename T = Proxied, std::enable_if_t<std::is_same<T, RLoopManager>::value, int> = 0>
-   RInterface(const std::shared_ptr<Proxied> &proxied)
+   /// \brief Build a RInterface from a RLoopManager.
+   /// This constructor is only available for RInterface<RLoopManager>.
+   template <typename T = Proxied, typename = std::enable_if_t<std::is_same<T, RLoopManager>::value, int>>
+   RInterface(const std::shared_ptr<RLoopManager> &proxied)
       : fProxiedPtr(proxied), fLoopManager(proxied.get()), fDataSource(proxied->GetDataSource())
    {
       AddDefaultColumns();
@@ -298,8 +302,6 @@ public:
    template <typename F, typename std::enable_if_t<!std::is_convertible<F, std::string>::value, int> = 0>
    RInterface<Proxied, DS_t> Define(std::string_view name, F expression, const ColumnNames_t &columns = {})
    {
-      //auto newCols = columns;
-      //newCols.insert(newCols.begin(), "rdfentry_");
       return DefineImpl<F, RDFDetail::CustomColExtraArgs::None>(name, std::move(expression), columns, "Define");
    }
    // clang-format on
@@ -538,7 +540,7 @@ public:
 
       RDFInternal::RBookedDefines newCols(fDefines);
       newCols.AddColumn(std::move(newColumn), name);
-      RInterface<Proxied> newInterface(fProxiedPtr, *fLoopManager, newCols, fDataSource);
+      RInterface<Proxied> newInterface(fProxiedPtr, *fLoopManager, std::move(newCols), fDataSource);
       return newInterface;
    }
 
@@ -2592,12 +2594,11 @@ public:
    RResultPtr<RDisplay>
    Display(const ColumnNames_t &columnList, int nRows = 5, size_t nMaxCollectionElements = 10)
    {
-      CheckIMTDisabled("Display");  
-      auto newCols = columnList;
-      newCols.insert(newCols.begin(), "rdfentry_"); // Artificially insert first column
-      auto displayer = std::make_shared<RDFInternal::RDisplay>(newCols, GetColumnTypeNamesList(newCols), nRows, nMaxCollectionElements);
-      // Need to add ULong64_t type corresponding to the first column rdfentry_
-      return CreateAction<RDFInternal::ActionTags::Display, ULong64_t, ColumnTypes...>(newCols, displayer, displayer);
+      CheckIMTDisabled("Display");
+
+      auto displayer = std::make_shared<RDFInternal::RDisplay>(columnList, GetColumnTypeNamesList(columnList), nRows,
+                                                               nMaxCollectionElements);
+      return CreateAction<RDFInternal::ActionTags::Display, ColumnTypes...>(columnList, displayer, displayer);
    }
 
    ////////////////////////////////////////////////////////////////////////////
@@ -2609,17 +2610,14 @@ public:
    ///
    /// This overload automatically infers the column types.
    /// See the previous overloads for further details.
-   ///
-   /// Invoked when no types are specified to Display
    RResultPtr<RDisplay>
    Display(const ColumnNames_t &columnList, int nRows = 5, size_t nMaxCollectionElements = 10)
    {
       CheckIMTDisabled("Display");
-      auto newCols = columnList;
-      newCols.insert(newCols.begin(), "rdfentry_"); // Artificially insert first column
-      auto displayer = std::make_shared<RDFInternal::RDisplay>(newCols, GetColumnTypeNamesList(newCols), nRows, nMaxCollectionElements);
-      return CreateAction<RDFInternal::ActionTags::Display, RDFDetail::RInferredType>(newCols, displayer, displayer,
-                                                                                      newCols.size());
+      auto displayer = std::make_shared<RDFInternal::RDisplay>(columnList, GetColumnTypeNamesList(columnList), nRows,
+                                                               nMaxCollectionElements);
+      return CreateAction<RDFInternal::ActionTags::Display, RDFDetail::RInferredType>(columnList, displayer, displayer,
+                                                                                      columnList.size());
    }
 
    ////////////////////////////////////////////////////////////////////////////
@@ -2810,7 +2808,7 @@ private:
       RDFInternal::RBookedDefines newCols(fDefines);
       newCols.AddColumn(newColumn, name);
 
-      RInterface<Proxied> newInterface(fProxiedPtr, *fLoopManager, newCols, fDataSource);
+      RInterface<Proxied> newInterface(fProxiedPtr, *fLoopManager, std::move(newCols), fDataSource);
 
       return newInterface;
    }
@@ -2914,8 +2912,6 @@ protected:
 
    ColumnNames_t GetValidatedColumnNames(const unsigned int nColumns, const ColumnNames_t &columns)
    {
-      //auto newCols = columns;
-      //newCols.insert(newCols.begin(), "rdfentry_");
       return RDFInternal::GetValidatedColumnNames(*fLoopManager, nColumns, columns, fDefines.GetNames(), fDataSource);
    }
 
