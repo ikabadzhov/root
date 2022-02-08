@@ -1,13 +1,13 @@
 #ifndef ROOT_TNUMAExecutor
 #define ROOT_TNUMAExecutor
 
+#include "ROOT/RSpan.hxx"
+#include "ROOT/RTaskArena.hxx"
 #include "ROOT/TProcessExecutor.hxx"
 #include "ROOT/TThreadExecutor.hxx"
-#include "ROOT/RTaskArena.hxx"
-#include "ROOT/RSpan.hxx"
 
-#include <numa.h>
 #include <algorithm> // std::min, std::max
+#include <numa.h>
 #include <thread>
 
 namespace ROOT {
@@ -55,9 +55,8 @@ private:
 template <class T>
 std::vector<std::span<T>> TNUMAExecutor::splitData(std::vector<T> &vec)
 {
-   unsigned int nToProcess = vec.size();
-   unsigned stride = (nToProcess + fNDomains - 1) / fNDomains; // ceiling the division
-   auto av = std::make_view(vec);
+   unsigned stride = (vec.size() + fNDomains - 1) / fNDomains; // ceiling the division
+   auto av = std::span<T>(vec);
    std::vector<std::span<T>> v;
    unsigned i;
    for (i = 0; i * stride < av.size() - stride; i++) {
@@ -111,7 +110,8 @@ auto TNUMAExecutor::MapReduce(F func, ROOT::TSeq<INTEGER> args, R redfunc, unsig
    auto runOnNode = [&](unsigned int i) {
       numa_run_on_node(i);
       ROOT::TThreadExecutor threadExecutor{fDomainNThreads};
-      ROOT::TSeq<unsigned> sequence(std::max(*args.begin(), i * stride), std::min((i + 1) * stride, *args.end()));
+      ROOT::TSeq<unsigned> sequence(std::max(unsigned(*args.begin()), i *stride),
+                                    std::min((i + 1) * stride, unsigned(*args.end())));
       auto res = threadExecutor.MapReduce(func, sequence, redfunc, nChunks / fNDomains);
       numa_run_on_node_mask(numa_all_nodes_ptr);
       return res;
