@@ -423,7 +423,7 @@ namespace ROOT {
          for (unsigned j = 0; j < step && (i + j) < end; j+=seqStep) {
             partialResults[j] = func(i + j);
          }
-         reslist[i / step] = Reduce(partialResults, redfunc);
+         reslist[i / step % actualChunks] = Reduce(partialResults, redfunc);
       };
       ParallelFor(start, end, step, lambda);
 
