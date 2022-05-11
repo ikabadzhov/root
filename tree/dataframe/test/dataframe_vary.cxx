@@ -54,8 +54,18 @@ TEST(RDFVary, RequireNVariationsIsConsistent)
    auto df = ROOT::RDataFrame(10).Define("x", [] { return 1; });
    auto s = df.Vary("x", SimpleVariation, {}, /*wrong=*/3).Sum<int>("x");
    auto all_s = VariationsFor(s);
+
+   std::cerr << std::flush;
+   std::streambuf *oldCerrStreamBuf = std::cerr.rdbuf();
+   std::ostringstream strCerr;
+   std::cerr.rdbuf(strCerr.rdbuf());
+
    // now, when evaluating `SimpleVariation`, we should notice that it returns 2 values, not 3, and throw
    EXPECT_THROW(all_s["nominal"], std::runtime_error);
+
+   std::cerr.rdbuf(oldCerrStreamBuf);
+   EXPECT_EQ(strCerr.str(), "RDataFrame::Run: event loop was interrupted\n");
+
 }
 
 TEST(RDFVary, VariationsForDoesNotTriggerRun)
@@ -1142,7 +1152,7 @@ TEST_P(RDFVary, VaryReport)
    EXPECT_FLOAT_EQ(report["after"].GetEff(), 50.);
    EXPECT_EQ(report["after"].GetPass(), 2);
 
-   EXPECT_THROW(VariationsFor(h), std::logic_error); // TODO implement variation of reports     
+   EXPECT_THROW(VariationsFor(h), std::runtime_error); // FIXME not (yet) implemented
 }
 
 TEST_P(RDFVary, VaryStats)
@@ -1156,7 +1166,7 @@ TEST_P(RDFVary, VaryStats)
                   },
                   {"x"}, 2)
                .Stats<int>("x");
-   EXPECT_THROW(VariationsFor(h), std::logic_error); // FIXME not (yet) implemented
+   EXPECT_THROW(VariationsFor(h), std::runtime_error); // FIXME not (yet) implemented
 }
 
 TEST_P(RDFVary, VaryStdDev)
