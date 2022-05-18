@@ -950,6 +950,9 @@ struct CustomFiller {
       h.Merge(&l);
    }
 
+   // needed for VariationsFor
+   void Reset() { h.Reset(); }
+
    double GetMeanX() const { return h.GetMean(1); }
    double GetMeanY() const { return h.GetMean(2); }
 };
