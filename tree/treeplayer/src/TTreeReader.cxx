@@ -434,7 +434,7 @@ TTreeReader::EEntryStatus TTreeReader::SetEntriesRange(Long64_t beginEntry, Long
    else {
       // Load the first entry in the range. SetEntry() will also call SetProxies(),
       // thus adding all the branches to the cache and triggering the learning phase.
-      EEntryStatus es = SetEntry(beginEntry - 1);
+      EEntryStatus es = SetEntry(beginEntry);
       if (es != kEntryValid) {
          Error("SetEntriesRange()", "Error setting first entry %lld: %s",
                beginEntry, fgEntryStatusText[(int)es]);
