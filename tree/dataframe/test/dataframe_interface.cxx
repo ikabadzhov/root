@@ -812,3 +812,68 @@ TEST(RDataFrameInterface, SnapshotWithDuplicateColumns)
       std::logic_error);
    EXPECT_THROW((ROOT::RDataFrame(1).Snapshot("t", "neverwritten.root", {"rdfentry_", "rdfentry_"})), std::logic_error);
 }
+
+struct Jet {
+   double a, b;
+};
+
+struct CustomFiller {
+   TH2D h{"", "", 10, 0, 10, 10, 0, 10};
+
+   void Fill(const Jet &j) { h.Fill(j.a, j.b); }
+
+   void Merge(const std::vector<CustomFiller *> &)
+   {
+      // unused, single-thread test
+   }
+
+   double GetMeanX() const { return h.GetMean(1); }
+   double GetMeanY() const { return h.GetMean(2); }
+   double GetEntries() const { return h.GetEntries(); }
+};
+
+// #9428
+TEST(RDataFrameInterface, FillCustomType)
+{
+   auto res = ROOT::RDataFrame(10).Define("Jet", [] { return Jet{1., 2.}; }).Fill<Jet>(CustomFiller{}, {"Jet"});
+   EXPECT_DOUBLE_EQ(res->GetEntries(), 10.);
+   EXPECT_DOUBLE_EQ(res->GetMeanX(), 1.);
+   EXPECT_DOUBLE_EQ(res->GetMeanY(), 2.);
+}
+
+TEST(RDataFrameInterface, RedefineFriend)
+{
+   int x = 0;
+   TTree main("main", "main");
+   main.Branch("x", &x);
+   main.Fill();
+
+   x = 42;
+   TTree fr("friend", "friend");
+   fr.Branch("x", &x);
+   fr.Fill();
+
+   main.AddFriend(&fr);
+
+   auto df = ROOT::RDataFrame(main);
+   auto sum = df.Redefine("friend.x", [](int _x) { return _x + 1; }, {"friend.x"}).Sum<int>("friend.x");
+   EXPECT_EQ(*sum, 43);
+}
+
+// #11002
+TEST(RDataFrameUtils, RegexWithFriendsInJittedFilters)
+{
+   TTree t("t", "t");
+   int x = 42;
+   t.Branch("x", &x);
+   t.Fill();
+   TTree fr("fr", "fr");
+   x = -42;
+   fr.Branch("x", &x);
+   fr.Fill();
+   t.AddFriend(&fr);
+   ROOT::RDataFrame df(t);
+   // ensure that order of operations does not matter
+   EXPECT_EQ(df.Filter("fr.x < 0 && x > 0").Count().GetValue(), 1);
+   EXPECT_EQ(df.Filter("x > 0 && fr.x < 0").Count().GetValue(), 1);
+}
