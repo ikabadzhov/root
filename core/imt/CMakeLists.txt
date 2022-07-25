@@ -36,6 +36,7 @@ if(imt)
     ROOT/RTaskArena.hxx
     ROOT/TExecutor.hxx
     ROOT/TThreadExecutor.hxx
+    ROOT/TNumaExecutor.hxx
     LINKDEF
       LinkDef.h
     MODULE
