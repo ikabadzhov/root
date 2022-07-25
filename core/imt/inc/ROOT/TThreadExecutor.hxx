@@ -36,6 +36,10 @@
 #include <utility> //std::move
 #include <vector>
 
+#include <algorithm> // std::min, std::max
+#include <numa.h>
+#include <thread>
+
 namespace ROOT {
 
    class TThreadExecutor: public TExecutorCRTP<TThreadExecutor> {
@@ -63,6 +67,13 @@ namespace ROOT {
       void Foreach(F func, std::vector<T> &args, unsigned nChunks = 0);
       template<class F, class T>
       void Foreach(F func, const std::vector<T> &args, unsigned nChunks = 0);
+
+      template<class F, class T>
+      void NUMAForeach(F func, std::initializer_list<T> args, unsigned nChunks = 0);
+      template<class F, class T>
+      void NUMAForeach(F func, std::vector<T> &args, unsigned nChunks = 0);
+      template<class F, class T>
+      void NUMAForeach(F func, const std::vector<T> &args, unsigned nChunks = 0);
 
       // Map
       //
@@ -246,6 +257,78 @@ namespace ROOT {
          }
       };
       ParallelFor(0U, nToProcess, step, lambda);
+   }
+
+   template<class F, class T>
+   void TThreadExecutor::NUMAForeach(F func, std::initializer_list<T> args, unsigned nChunks) {
+      std::vector<T> vargs(std::move(args));
+      NUMAForeach(func, vargs, nChunks);
+   }
+
+   template<class F, class T>
+   void TThreadExecutor::NUMAForeach(F func, std::vector<T> &args, unsigned nChunks) {
+      const unsigned fNDomains = unsigned(numa_max_node()) + 1;
+      if (fNDomains > 1) {
+         auto runOnNode = [&](unsigned int i) {
+            numa_run_on_node(i);
+            numa_run_on_node_mask(numa_all_nodes_ptr);
+            // TODO: improve the current split that is total cores / numa domains
+            //ROOT::TThreadExecutor threadExecutor{GetPoolSize() / fNDomains};
+
+            if (i != fNDomains - 1) {
+               const auto lowerBoundRange =
+                  args.begin() + i * (args.size() + fNDomains - 1) / fNDomains; // beginning of vector split
+               const auto upperBoundRange =
+                  args.begin() + (i + 1) * (args.size() + fNDomains - 1) / fNDomains; // end of vector split
+               const unsigned nChunksPerProc = (nChunks + fNDomains - 1) / fNDomains; // ceiling the division
+               return nChunks ? Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange), nChunksPerProc)
+                              : Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange));
+            } else {
+               const auto lowerBoundRange =
+                  args.begin() + i * (args.size() + fNDomains - 1) / fNDomains; // beginning of vector split
+               const auto upperBoundRange = args.end();                         // end of vector split
+               const unsigned nChunksPerProc = nChunks - ((nChunks + fNDomains - 1) / fNDomains) * (fNDomains - 1);
+               return nChunks ? Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange), nChunksPerProc)
+                              : Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange));
+            }
+         };
+         return Foreach(runOnNode, ROOT::TSeq<unsigned>(fNDomains));
+      }
+      else { // explicitly no need of NUMA specific work
+         Foreach(func, args, nChunks);
+      }
+   }
+
+   template<class F, class T>
+   void TThreadExecutor::NUMAForeach(F func, const std::vector<T> &args, unsigned nChunks) {
+      const unsigned fNDomains = unsigned(numa_max_node()) + 1;
+      if (fNDomains > 1) {
+         auto runOnNode = [&](unsigned int i) {
+            numa_run_on_node(i);
+            numa_run_on_node_mask(numa_all_nodes_ptr);
+
+            if (i != fNDomains - 1) {
+               const auto lowerBoundRange =
+                  args.begin() + i * (args.size() + fNDomains - 1) / fNDomains; // beginning of vector split
+               const auto upperBoundRange =
+                  args.begin() + (i + 1) * (args.size() + fNDomains - 1) / fNDomains; // end of vector split
+               const unsigned nChunksPerProc = (nChunks + fNDomains - 1) / fNDomains; // ceiling the division
+               return nChunks ? Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange), nChunksPerProc)
+                              : Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange));
+            } else {
+               const auto lowerBoundRange =
+                  args.begin() + i * (args.size() + fNDomains - 1) / fNDomains; // beginning of vector split
+               const auto upperBoundRange = args.end();                         // end of vector split
+               const unsigned nChunksPerProc = nChunks - ((nChunks + fNDomains - 1) / fNDomains) * (fNDomains - 1);
+               return nChunks ? Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange), nChunksPerProc)
+                              : Foreach(func, std::vector<T>(lowerBoundRange, upperBoundRange));
+            }
+         };
+         return Foreach(runOnNode, ROOT::TSeq<unsigned>(fNDomains));
+      }
+      else { // explicitly no need of NUMA specific work
+         Foreach(func, args, nChunks);
+      }
    }
 
    //////////////////////////////////////////////////////////////////////////
