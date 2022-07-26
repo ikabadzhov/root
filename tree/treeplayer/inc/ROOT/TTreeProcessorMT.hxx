@@ -29,6 +29,7 @@
 #include <vector>
 #include <limits>
 #include <RtypesCore.h> // Long64_t
+#include <numa.h>
 
 /** \class TTreeView
     \brief A helper class that encapsulates a file and a tree.

@@ -111,4 +111,8 @@ if(imt)
   target_sources(TreePlayer PRIVATE src/TTreeProcessorMT.cxx)
 endif()
 
+if (numa AND LIBNUMA_FOUND)
+  target_link_libraries(TreePlayer PRIVATE ${LIBNUMA_LIBRARIES})
+endif()
+
 ROOT_ADD_TEST_SUBDIRECTORY(test)

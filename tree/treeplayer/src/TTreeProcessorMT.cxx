@@ -566,7 +566,7 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
                                            allEntries, GetFriendEntries(fFriendInfo));
          func(*r);
       };
-      fPool.Foreach(processCluster, allClusters[fileIdx]);
+      fPool.NUMAForeach(processCluster, allClusters[fileIdx]);
    };
 
    // Per-file processing that also retrieves cluster info for a file
@@ -582,7 +582,7 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
                                            std::vector<std::vector<Long64_t>>{});
          func(*r);
       };
-      fPool.Foreach(processCluster, clusters);
+      fPool.NUMAForeach(processCluster, clusters);
    };
 
    const auto firstNonEmpty =
@@ -594,9 +594,9 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
    std::iota(fileIdxs.begin(), fileIdxs.end(), firstNonEmpty);
 
    if (shouldRetrieveAllClusters)
-      fPool.Foreach(processFileUsingGlobalClusters, fileIdxs);
+      fPool.NUMAForeach(processFileUsingGlobalClusters, fileIdxs);
    else
-      fPool.Foreach(processFileRetrievingClusters, fileIdxs);
+      fPool.NUMAForeach(processFileRetrievingClusters, fileIdxs);
 
    // make sure TChains and TFiles are cleaned up since they are not globally tracked
    for (unsigned int islot = 0; islot < fTreeView.GetNSlots(); ++islot) {
