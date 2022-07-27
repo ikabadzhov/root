@@ -93,6 +93,7 @@ private:
 
    std::vector<std::string> FindTreeNames();
    static unsigned int fgTasksPerWorkerHint;
+   static bool NUMAOPT;
 
    std::pair<Long64_t, Long64_t> fGlobalRange{0, std::numeric_limits<Long64_t>::max()};
 
@@ -110,6 +111,9 @@ public:
 
    static void SetTasksPerWorkerHint(unsigned int m);
    static unsigned int GetTasksPerWorkerHint();
+
+   static void SetNUMAOPT(bool opt);
+   static bool GetNUMAOPT();
 };
 
 } // End of namespace ROOT

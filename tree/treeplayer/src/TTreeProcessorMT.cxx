@@ -306,6 +306,7 @@ static std::vector<std::vector<Long64_t>> GetFriendEntries(const Internal::TreeU
 namespace ROOT {
 
 unsigned int TTreeProcessorMT::fgTasksPerWorkerHint = 10U;
+bool TTreeProcessorMT::NUMAOPT = true;
 
 namespace Internal {
 
@@ -566,7 +567,8 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
                                            allEntries, GetFriendEntries(fFriendInfo));
          func(*r);
       };
-      fPool.NUMAForeach(processCluster, allClusters[fileIdx]);
+      // already splitted in a separate NUMA partition
+      fPool.Foreach(processCluster, allClusters[fileIdx]);
    };
 
    // Per-file processing that also retrieves cluster info for a file
@@ -582,7 +584,8 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
                                            std::vector<std::vector<Long64_t>>{});
          func(*r);
       };
-      fPool.NUMAForeach(processCluster, clusters);
+      // already splitted in a separate NUMA partition
+      fPool.Foreach(processCluster, clusters);
    };
 
    const auto firstNonEmpty =
@@ -593,11 +596,17 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
    std::vector<std::size_t> fileIdxs(allEntries.empty() ? fFileNames.size() : allEntries.size() - firstNonEmpty);
    std::iota(fileIdxs.begin(), fileIdxs.end(), firstNonEmpty);
 
-   if (shouldRetrieveAllClusters)
-      fPool.NUMAForeach(processFileUsingGlobalClusters, fileIdxs);
-   else
-      fPool.NUMAForeach(processFileRetrievingClusters, fileIdxs);
-
+   if (shouldRetrieveAllClusters) {
+      if (GetNUMAOPT())
+         fPool.NUMAForeach(processFileUsingGlobalClusters, fileIdxs);
+      else
+         fPool.Foreach(processFileUsingGlobalClusters, fileIdxs);
+   } else {
+      if (GetNUMAOPT())
+         fPool.NUMAForeach(processFileRetrievingClusters, fileIdxs);
+      else
+         fPool.Foreach(processFileRetrievingClusters, fileIdxs);
+   }
    // make sure TChains and TFiles are cleaned up since they are not globally tracked
    for (unsigned int islot = 0; islot < fTreeView.GetNSlots(); ++islot) {
       ROOT::Internal::TTreeView *view = fTreeView.GetAtSlotRaw(islot);
@@ -627,3 +636,14 @@ void TTreeProcessorMT::SetTasksPerWorkerHint(unsigned int tasksPerWorkerHint)
 {
    fgTasksPerWorkerHint = tasksPerWorkerHint;
 }
+
+bool TTreeProcessorMT::GetNUMAOPT()
+{
+   return NUMAOPT;
+}
+
+void TTreeProcessorMT::SetNUMAOPT(bool opt)
+{
+   NUMAOPT = opt;
+}
+
