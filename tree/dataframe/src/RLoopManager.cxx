@@ -52,6 +52,10 @@
 #include <set>
 #include <limits> // For MaxTreeSizeRAII. Revert when #6640 will be solved.
 
+#include <fstream>
+#include <iomanip>
+
+
 using namespace ROOT::Detail::RDF;
 using namespace ROOT::Internal::RDF;
 
@@ -509,12 +513,24 @@ void RLoopManager::RunTreeProcessorMT()
 
    std::atomic<ULong64_t> entryCount(0ull);
 
+   std::ofstream jlogf;
+   {
+      jlogf.open("/data/ikabadzh/august_investigation/TNumaExecutor_standalone/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+      jlogf << "Start this test"<< std::endl;
+      }
+
    tp->Process([this, &slotStack, &entryCount](TTreeReader &r) -> void {
       RSlotRAII slotRAII(slotStack);
       auto slot = slotRAII.fSlot;
       RCallCleanUpTask cleanup(*this, slot, &r);
       InitNodeSlots(&r, slot);
       R__LOG_INFO(RDFLogChannel()) << LogRangeProcessing(TreeDatasetLogInfo(r, slot));
+      TStopwatch s;
+      std::ofstream jlogf1;
+      {
+         jlogf1.open("/data/ikabadzh/august_investigation/TNumaExecutor_standalone/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+         jlogf1 << "SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " START: " << std::setprecision(std::numeric_limits<double>::digits10 + 1) << s.GetRealTime() << std::endl;
+      }
       const auto entryRange = r.GetEntriesRange(); // we trust TTreeProcessorMT to call SetEntriesRange
       const auto nEntries = entryRange.second - entryRange.first;
       auto count = entryCount.fetch_add(nEntries);
@@ -537,6 +553,12 @@ void RLoopManager::RunTreeProcessorMT()
          throw std::runtime_error("An error was encountered while processing the data. TTreeReader status code is: " +
                                   std::to_string(r.GetEntryStatus()));
       }
+      std::ofstream jlogf2;
+      {
+         jlogf2.open("/data/ikabadzh/august_investigation/TNumaExecutor_standalone/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+         jlogf2 << "SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " END: " << std::setprecision(std::numeric_limits<double>::digits10 + 1) << s.GetRealTime() << std::endl;
+      }
+
    });
 #endif // no-op otherwise (will not be called)
 }

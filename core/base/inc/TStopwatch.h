@@ -39,10 +39,10 @@ private:
    EState       fState;           //stopwatch state
    Int_t        fCounter;         //number of times the stopwatch was started
 
+public:
    static Double_t GetRealTime();
    static Double_t GetCPUTime();
 
-public:
    TStopwatch();
    void        Start(Bool_t reset = kTRUE);
    void        Stop();
