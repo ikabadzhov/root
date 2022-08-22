@@ -10,8 +10,10 @@
 #include <mutex>
 #include <thread>
 #include "tbb/task_arena.h"
+#include "tbb/task_group.h"
 #define TBB_PREVIEW_GLOBAL_CONTROL 1 // required for TBB versions preceding 2019_U4
 #include "tbb/global_control.h"
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 ///
@@ -73,9 +75,20 @@ int LogicalCPUBandwithControl()
 /// * If no BC in place and maxConcurrency<1, defaults to the default tbb number of threads,
 /// which is CPU affinity aware
 ////////////////////////////////////////////////////////////////////////////////
-RTaskArenaWrapper::RTaskArenaWrapper(unsigned maxConcurrency) : fTBBArena(new ROpaqueTaskArena{})
+RTaskArenaWrapper::RTaskArenaWrapper(unsigned maxConcurrency) //: fTBBArena(new ROpaqueTaskArena{})
 {
-   const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency(); // not initialized, automatic state
+   std::vector<tbb::numa_node_id> numa_nodes = tbb::info::numa_nodes();
+   //fTBBArena = std::vector<tbb::task_arena>(numa_nodes.size());
+   //fTBBGroup = std::vector<tbb::task_group>(numa_nodes.size());
+   fTBBArena.reserve(numa_nodes.size());
+   fTBBGroup.reserve(numa_nodes.size());
+   unsigned tbbDefaultNumberThreads = 0;
+   for (auto i = 0u; i < numa_nodes.size(); i++) {
+      fTBBArena.emplace_back(std::move(new ROpaqueTaskArena{}));
+      fTBBGroup.emplace_back(std::move(new ROpaqueTaskGroup{}));
+      tbbDefaultNumberThreads += fTBBArena[i]->max_concurrency();
+   }
+   // const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency(); // not initialized, automatic state
    maxConcurrency = maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
    const unsigned bcCpus = LogicalCPUBandwithControl();
    if (maxConcurrency > bcCpus) {
@@ -86,7 +99,8 @@ RTaskArenaWrapper::RTaskArenaWrapper(unsigned maxConcurrency) : fTBBArena(new RO
       Warning("RTaskArenaWrapper", "tbb::global_control is active, limiting the number of parallel workers"
                                    "from this task arena available for execution.");
    }
-   fTBBArena->initialize(maxConcurrency);
+   for (auto i = 0u; i < numa_nodes.size(); i++)
+      fTBBArena[i]->initialize(tbb::task_arena::constraints(numa_nodes[i], maxConcurrency));
    fNWorkers = maxConcurrency;
    ROOT::EnableThreadSafety();
 }
@@ -105,7 +119,7 @@ unsigned RTaskArenaWrapper::TaskArenaSize()
 ////////////////////////////////////////////////////////////////////////////////
 /// Provides access to the wrapped tbb::task_arena.
 ////////////////////////////////////////////////////////////////////////////////
-ROOT::ROpaqueTaskArena &RTaskArenaWrapper::Access()
+std::vector<ROOT::ROpaqueTaskArena> &RTaskArenaWrapper::Access()
 {
    return *fTBBArena;
 }

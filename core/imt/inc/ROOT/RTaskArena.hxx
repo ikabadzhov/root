@@ -25,6 +25,7 @@
 
 #include "RConfigure.h"
 #include <memory>
+#include <vector>
 
 // exclude in case ROOT does not have IMT support
 #ifndef R__USE_IMT
@@ -40,6 +41,7 @@
 namespace ROOT {
 
 class ROpaqueTaskArena;
+class ROpaqueTaskGroup;
 
 namespace Internal {
 
@@ -64,11 +66,12 @@ class RTaskArenaWrapper {
 public:
    ~RTaskArenaWrapper(); // necessary to set size back to zero
    static unsigned TaskArenaSize(); // A static getter lets us check for RTaskArenaWrapper's existence
-   ROOT::ROpaqueTaskArena &Access();
+   std::vector<ROOT::ROpaqueTaskArena> &Access();
 private:
    RTaskArenaWrapper(unsigned maxConcurrency = 0);
    friend std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency);
-   std::unique_ptr<ROOT::ROpaqueTaskArena> fTBBArena;
+   std::vector<std::unique_ptr<ROOT::ROpaqueTaskArena>> fTBBArena;
+   std::vector<std::unique_ptr<ROOT::ROpaqueTaskGroup>> fTBBGroup;
    static unsigned fNWorkers;
 };
 
