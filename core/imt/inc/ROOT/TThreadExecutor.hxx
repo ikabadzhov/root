@@ -134,7 +134,7 @@ namespace ROOT {
       auto SeqReduce(const std::vector<T> &objs, R redfunc) -> decltype(redfunc(objs));
 
       /// Pointer to the TBB task arena wrapper
-      std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> fTaskArenaW = nullptr;
+      std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> fTaskArenaW;
    };
 
    /************ TEMPLATE METHODS IMPLEMENTATION ******************/

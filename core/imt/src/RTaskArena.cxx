@@ -127,6 +127,15 @@ std::vector<ROOT::ROpaqueTaskArena *> RTaskArenaWrapper::Access()
    return accessed;
 }
 
+std::vector<ROOT::ROpaqueTaskGroup *> RTaskArenaWrapper::GroupAccess()
+{
+   std::vector<ROOT::ROpaqueTaskGroup *> accessed;
+   for (auto &ptr : fTBBGroup)
+      accessed.push_back(std::move(ptr.get()));
+   return accessed;
+}
+
+
 std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency)
 {
    static std::weak_ptr<ROOT::Internal::RTaskArenaWrapper> weak_GTAWrapper;

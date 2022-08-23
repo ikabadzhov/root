@@ -167,11 +167,32 @@ void TThreadExecutor::ParallelFor(unsigned int start, unsigned int end, unsigned
               " Proceeding with %zu threads this time",
               tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism));
    }
-   fTaskArenaW->Access().execute([&] {
-      tbb::this_task_arena::isolate([&] {
-         tbb::parallel_for(start, end, step, f);
+   auto arenas = fTaskArenaW->Access();
+   auto task_groups =  fTaskArenaW->GroupAccess();
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&] {
+         task_groups[i]->run([&] {
+	    tbb::this_task_arena::isolate([&] {
+               tbb::parallel_for(start, end, step, f);
+            });
+         });
       });
-   });
+   }
+
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&task_groups, i] {
+         task_groups[i]->wait();
+      });
+   }
+
+   //for (auto i = 0u; i < fTaskArenaW->Access().size(); i++) {
+   //   fTaskArenaW->Access().execute([&]
+   //}
+   //fTaskArenaW->Access().execute([&] {
+   //   tbb::this_task_arena::isolate([&] {
+   //      tbb::parallel_for(start, end, step, f);
+   //   });
+   //});
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -189,7 +210,25 @@ double TThreadExecutor::ParallelReduce(const std::vector<double> &objs,
               " Proceeding with %zu threads this time",
               tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism));
    }
-   return fTaskArenaW->Access().execute([&] { return ROOT::Internal::ParallelReduceHelper<double>(objs, redfunc); });
+   auto arenas = fTaskArenaW->Access();
+   auto task_groups =  fTaskArenaW->GroupAccess();
+   //double res = -1;
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&] {
+         task_groups[i]->run([&] {
+	    ROOT::Internal::ParallelReduceHelper<double>(objs, redfunc);
+         });
+      });
+   }
+
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&task_groups, i] {
+         task_groups[i]->wait();
+      });
+   }
+   // TODO: isolate it as expected
+   return -1;
+   //return fTaskArenaW->Access().execute([&] { return ROOT::Internal::ParallelReduceHelper<double>(objs, redfunc); });
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -207,7 +246,25 @@ float TThreadExecutor::ParallelReduce(const std::vector<float> &objs,
               " Proceeding with %zu threads this time",
               tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism));
    }
-   return fTaskArenaW->Access().execute([&] { return ROOT::Internal::ParallelReduceHelper<float>(objs, redfunc); });
+   auto arenas = fTaskArenaW->Access();
+   auto task_groups =  fTaskArenaW->GroupAccess();
+   //double res = -1;
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&] {
+         task_groups[i]->run([&] {
+            ROOT::Internal::ParallelReduceHelper<float>(objs, redfunc);
+         });
+      });
+   }
+
+   for (auto i = 0u; i < arenas.size(); i++) {
+      arenas[i]->execute([&task_groups, i] {
+         task_groups[i]->wait();
+      });
+   }
+   // TODO: isolate it as expected
+   return -1;
+   //return fTaskArenaW->Access().execute([&] { return ROOT::Internal::ParallelReduceHelper<float>(objs, redfunc); });
 }
 
 //////////////////////////////////////////////////////////////////////////
