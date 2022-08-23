@@ -52,6 +52,9 @@
 #include <set>
 #include <limits> // For MaxTreeSizeRAII. Revert when #6640 will be solved.
 
+#include <iostream>
+#include <iomanip>
+
 using namespace ROOT::Detail::RDF;
 using namespace ROOT::Internal::RDF;
 
@@ -487,7 +490,9 @@ void RLoopManager::RunEmptySource()
    try {
       UpdateSampleInfo(/*slot*/0, {0, fNEmptyEntries});
       for (ULong64_t currEntry = 0; currEntry < fNEmptyEntries && fNStopsReceived < fNChildren; ++currEntry) {
+	 std::cout << "START: ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
          RunAndCheckFilters(0, currEntry);
+         std::cout << "END: ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
       }
    } catch (...) {
       std::cerr << "RDataFrame::Run: event loop was interrupted\n";
@@ -515,6 +520,7 @@ void RLoopManager::RunTreeProcessorMT()
       RCallCleanUpTask cleanup(*this, slot, &r);
       InitNodeSlots(&r, slot);
       R__LOG_INFO(RDFLogChannel()) << LogRangeProcessing(TreeDatasetLogInfo(r, slot));
+      std::cout << "START: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
       const auto entryRange = r.GetEntriesRange(); // we trust TTreeProcessorMT to call SetEntriesRange
       const auto nEntries = entryRange.second - entryRange.first;
       auto count = entryCount.fetch_add(nEntries);
@@ -537,6 +543,7 @@ void RLoopManager::RunTreeProcessorMT()
          throw std::runtime_error("An error was encountered while processing the data. TTreeReader status code is: " +
                                   std::to_string(r.GetEntryStatus()));
       }
+      std::cout << "END: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
    });
 #endif // no-op otherwise (will not be called)
 }

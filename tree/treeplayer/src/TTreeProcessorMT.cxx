@@ -593,11 +593,16 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
    std::vector<std::size_t> fileIdxs(allEntries.empty() ? fFileNames.size() : allEntries.size() - firstNonEmpty);
    std::iota(fileIdxs.begin(), fileIdxs.end(), firstNonEmpty);
 
-   if (shouldRetrieveAllClusters)
-      fPool.Foreach(processFileUsingGlobalClusters, fileIdxs);
-   else
-      fPool.Foreach(processFileRetrievingClusters, fileIdxs);
-
+   if (shouldRetrieveAllClusters){
+      for (auto &fileidx : fileIdxs)
+         processFileUsingGlobalClusters(fileidx);
+   }
+   //fPool.Foreach(processFileUsingGlobalClusters, fileIdxs);
+   else {
+      for (auto &fileidx : fileIdxs)
+         processFileRetrievingClusters(fileidx);
+      //fPool.Foreach(processFileRetrievingClusters, fileIdxs);
+   }
    // make sure TChains and TFiles are cleaned up since they are not globally tracked
    for (unsigned int islot = 0; islot < fTreeView.GetNSlots(); ++islot) {
       ROOT::Internal::TTreeView *view = fTreeView.GetAtSlotRaw(islot);
