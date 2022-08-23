@@ -84,8 +84,8 @@ RTaskArenaWrapper::RTaskArenaWrapper(unsigned maxConcurrency) //: fTBBArena(new 
    fTBBGroup.reserve(numa_nodes.size());
    unsigned tbbDefaultNumberThreads = 0;
    for (auto i = 0u; i < numa_nodes.size(); i++) {
-      fTBBArena.emplace_back(std::move(new ROpaqueTaskArena{}));
-      fTBBGroup.emplace_back(std::move(new ROpaqueTaskGroup{}));
+      fTBBArena.emplace_back(new ROpaqueTaskArena{});
+      fTBBGroup.emplace_back(new ROpaqueTaskGroup{});
       tbbDefaultNumberThreads += fTBBArena[i]->max_concurrency();
    }
    // const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency(); // not initialized, automatic state
