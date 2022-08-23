@@ -119,9 +119,12 @@ unsigned RTaskArenaWrapper::TaskArenaSize()
 ////////////////////////////////////////////////////////////////////////////////
 /// Provides access to the wrapped tbb::task_arena.
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<ROOT::ROpaqueTaskArena> &RTaskArenaWrapper::Access()
+std::vector<ROOT::ROpaqueTaskArena *> RTaskArenaWrapper::Access()
 {
-   return *fTBBArena;
+   std::vector<ROOT::ROpaqueTaskArena *> accessed;
+   for (auto &ptr : fTBBArena)
+      accessed.push_back(std::move(ptr.get()));
+   return accessed;
 }
 
 std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency)

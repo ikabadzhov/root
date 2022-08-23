@@ -66,7 +66,7 @@ class RTaskArenaWrapper {
 public:
    ~RTaskArenaWrapper(); // necessary to set size back to zero
    static unsigned TaskArenaSize(); // A static getter lets us check for RTaskArenaWrapper's existence
-   std::vector<ROOT::ROpaqueTaskArena> &Access();
+   std::vector<ROOT::ROpaqueTaskArena *> Access();
 private:
    RTaskArenaWrapper(unsigned maxConcurrency = 0);
    friend std::shared_ptr<ROOT::Internal::RTaskArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency);
