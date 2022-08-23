@@ -14,6 +14,8 @@
 #pragma GCC diagnostic pop
 #endif
 
+#include<iostream>
+
 //////////////////////////////////////////////////////////////////////////
 ///
 /// \class ROOT::TThreadExecutor
@@ -158,7 +160,7 @@ TThreadExecutor::TThreadExecutor(UInt_t nThreads)
 /// \param end End index of the loop.
 /// \param step Step size of the loop.
 /// \param f function to execute.
-void TThreadExecutor::ParallelFor(unsigned int start, unsigned int end, unsigned step,
+void TThreadExecutor::ParallelFor(unsigned int start, unsigned int end, unsigned int step,
                                   const std::function<void(unsigned int i)> &f)
 {
    if (GetPoolSize() > tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism)) {
@@ -168,22 +170,31 @@ void TThreadExecutor::ParallelFor(unsigned int start, unsigned int end, unsigned
               tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism));
    }
    auto arenas = fTaskArenaW->Access();
+   auto size = arenas.size();
    auto task_groups =  fTaskArenaW->GroupAccess();
-   for (auto i = 0u; i < arenas.size(); i++) {
-      arenas[i]->execute([&] {
-         task_groups[i]->run([&] {
-	    tbb::this_task_arena::isolate([&] {
-               tbb::parallel_for(start, end, step, f);
+   for (auto i = 0u; i < size; i++) {
+	   std::cout << "i0 is: " << i << std::endl;
+	   //tbb::this_task_arena::isolate([&] {
+      arenas[i]->execute([&task_groups, &f, i, start, end, step, size] {
+           //tbb::this_task_arena::isolate([&] {
+         task_groups[i]->run([&task_groups, &f, i, start, end, step, size] {
+	    tbb::this_task_arena::isolate([&task_groups, &f, i, start, end, step, size] {
+	       std::cout << "i is: " << i << std::endl;
+	       unsigned int lowerBound = start + i * (end - start + size) / size;
+	       unsigned int upperBound = std::min((unsigned int)(start + (i + 1) * (end - start + size) / size), end);
+               tbb::parallel_for(lowerBound, upperBound, step, f);
             });
          });
       });
    }
 
+   
    for (auto i = 0u; i < arenas.size(); i++) {
       arenas[i]->execute([&task_groups, i] {
          task_groups[i]->wait();
       });
    }
+   
 
    //for (auto i = 0u; i < fTaskArenaW->Access().size(); i++) {
    //   fTaskArenaW->Access().execute([&]

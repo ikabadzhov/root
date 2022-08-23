@@ -14,6 +14,7 @@
 #define TBB_PREVIEW_GLOBAL_CONTROL 1 // required for TBB versions preceding 2019_U4
 #include "tbb/global_control.h"
 #include <vector>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////////
 ///
@@ -82,13 +83,14 @@ RTaskArenaWrapper::RTaskArenaWrapper(unsigned maxConcurrency) //: fTBBArena(new 
    //fTBBGroup = std::vector<tbb::task_group>(numa_nodes.size());
    fTBBArena.reserve(numa_nodes.size());
    fTBBGroup.reserve(numa_nodes.size());
-   unsigned tbbDefaultNumberThreads = 0;
+   //unsigned tbbDefaultNumberThreads = 0;
    for (auto i = 0u; i < numa_nodes.size(); i++) {
       fTBBArena.emplace_back(new ROpaqueTaskArena{});
       fTBBGroup.emplace_back(new ROpaqueTaskGroup{});
-      tbbDefaultNumberThreads += fTBBArena[i]->max_concurrency();
+      //tbbDefaultNumberThreads += fTBBArena[i]->max_concurrency();
    }
-   // const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency(); // not initialized, automatic state
+   const unsigned tbbDefaultNumberThreads = fTBBArena[0]->max_concurrency(); // not initialized, automatic state
+   std::cout << "max possible threads: " << tbbDefaultNumberThreads << std::endl;
    maxConcurrency = maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
    const unsigned bcCpus = LogicalCPUBandwithControl();
    if (maxConcurrency > bcCpus) {
