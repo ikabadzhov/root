@@ -55,6 +55,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <fstream>
+
 using namespace ROOT::Detail::RDF;
 using namespace ROOT::Internal::RDF;
 
@@ -490,9 +492,9 @@ void RLoopManager::RunEmptySource()
    try {
       UpdateSampleInfo(/*slot*/0, {0, fNEmptyEntries});
       for (ULong64_t currEntry = 0; currEntry < fNEmptyEntries && fNStopsReceived < fNChildren; ++currEntry) {
-	 std::cout << "START: ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
+	 //std::cout << "START: ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
          RunAndCheckFilters(0, currEntry);
-         std::cout << "END: ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
+         //std::cout << "END: ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
       }
    } catch (...) {
       std::cerr << "RDataFrame::Run: event loop was interrupted\n";
@@ -514,13 +516,24 @@ void RLoopManager::RunTreeProcessorMT()
 
    std::atomic<ULong64_t> entryCount(0ull);
 
+   std::ofstream jlogf;
+   {
+      jlogf.open("/hpcscratch/user/ikabadzh/numa_investigation/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+      jlogf << "Start this test"<< std::endl;
+   }
    tp->Process([this, &slotStack, &entryCount](TTreeReader &r) -> void {
       RSlotRAII slotRAII(slotStack);
       auto slot = slotRAII.fSlot;
       RCallCleanUpTask cleanup(*this, slot, &r);
       InitNodeSlots(&r, slot);
       R__LOG_INFO(RDFLogChannel()) << LogRangeProcessing(TreeDatasetLogInfo(r, slot));
-      std::cout << "START: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
+      //std::cout << "START: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << "CoreID:" << sched_getcpu() << std::endl;
+      TStopwatch s;
+      std::ofstream jlogf1;
+      {
+         jlogf1.open("/hpcscratch/user/ikabadzh/numa_investigation/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+         jlogf1 << "SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " START: " << std::setprecision(std::numeric_limits<double>::digits10 + 1) << s.GetRealTime() << " ENTRY_BEGIN: " << TreeDatasetLogInfo(r, slot).fRangeStart << " ENTRY_END: " << TreeDatasetLogInfo(r, slot).fRangeEnd - 1 << " CORE: "<< sched_getcpu() << std::endl;
+      }
       const auto entryRange = r.GetEntriesRange(); // we trust TTreeProcessorMT to call SetEntriesRange
       const auto nEntries = entryRange.second - entryRange.first;
       auto count = entryCount.fetch_add(nEntries);
@@ -543,7 +556,13 @@ void RLoopManager::RunTreeProcessorMT()
          throw std::runtime_error("An error was encountered while processing the data. TTreeReader status code is: " +
                                   std::to_string(r.GetEntryStatus()));
       }
-      std::cout << "END: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
+      std::ofstream jlogf2;
+      {
+         jlogf2.open("/hpcscratch/user/ikabadzh/numa_investigation/rdf_benchmarks/LOGS/EventLoop.txt", std::ios::app);
+         jlogf2 << "SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " END: " << std::setprecision(std::numeric_limits<double>::digits10 + 1) << s.GetRealTime() << " CORE: "<< sched_getcpu() << std::endl;
+      }
+
+      //std::cout << "END: SlotID: " << TreeDatasetLogInfo(r, slot).fSlot <<  " ThreadID: " << std::this_thread::get_id() << " CoreID: " << sched_getcpu() << std::endl;
    });
 #endif // no-op otherwise (will not be called)
 }
