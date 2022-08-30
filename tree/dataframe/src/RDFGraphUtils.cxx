@@ -106,6 +106,26 @@ GraphDrawing::AddDefinesToGraph(std::shared_ptr<GraphNode> node, const RColumnRe
    return upmostNode;
 }
 
+std::shared_ptr<GraphDrawing::GraphNode>
+GraphDrawing::AddVariesToGraph(std::shared_ptr<GraphNode> node, const RColumnRegister &colRegister,
+                               const std::vector<std::string> &prevNodeVaries,
+                               std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap)
+{
+   auto upmostNode = node;
+   const auto &varyNames = colRegister.GetNames();
+   for (auto i = int(varyNames.size()) - 1; i >= 0; --i) { // walk backwards through the names of defined columns
+      const auto colName = varyNames[i];
+      if (!(std::find(prevNodeVaries.begin(), prevNodeVaries.end(), colName) == prevNodeVaries.end()))
+         break; // we walked back through all new varies, the rest is stuff that was already in the graph
+      // create a node for this new Vary
+      auto varyNode = RDFGraphDrawing::CreateVaryNode(colName, colRegister.GetDefine(colName), visitedMap);
+      upmostNode->SetPrevNode(varyNode);
+      upmostNode = varyNode;
+   }
+
+   return upmostNode;
+}
+
 namespace GraphDrawing {
 
 std::string GraphCreatorHelper::FromGraphLeafToDot(const GraphNode &start) const

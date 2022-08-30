@@ -30,7 +30,7 @@ enum class ENodeType {
    kRange,
    kRoot,
    kUsedAction,
-   kVary,
+   kVary
 };
 
 class GraphCreatorHelper;
@@ -55,6 +55,10 @@ class GraphNode {
    /// Columns defined up to this node. By checking the defined columns between two consecutive
    /// nodes, it is possible to know if there was some Define in between.
    std::vector<std::string> fDefinedColumns;
+
+   /// Columns varied up to this node. By checking the varied columns between two consecutive
+   /// nodes, it is possible to know if there was some Vary in between.
+   std::vector<std::string> fVariedColumns;
 
    std::shared_ptr<GraphNode> fPrevNode;
 
@@ -143,6 +147,10 @@ public:
    /// \brief Adds the column defined up to the node
    void AddDefinedColumns(const std::vector<std::string> &columns) { fDefinedColumns = columns; }
 
+   ////////////////////////////////////////////////////////////////////////////
+   /// \brief Adds the column varied up to the node
+   void AddVariedColumns(const std::vector<std::string> &columns) { fVariedColumns = columns; }
+
    std::string GetColor() const { return fColor; }
    unsigned int GetID() const { return fID; }
    std::string GetName() const { return fName; }
@@ -152,6 +160,10 @@ public:
    ////////////////////////////////////////////////////////////////////////////
    /// \brief Gets the column defined up to the node
    const std::vector<std::string> &GetDefinedColumns() const { return fDefinedColumns; }
+
+   ////////////////////////////////////////////////////////////////////////////
+   /// \brief Gets the column varied up to the node
+   const std::vector<std::string> &GetVariedColumns() const { return fVariedColumns; }
 
    bool IsExplored() const { return fIsExplored; }
    bool IsNew() const { return fIsNew; }

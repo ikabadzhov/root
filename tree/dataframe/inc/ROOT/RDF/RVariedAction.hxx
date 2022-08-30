@@ -170,6 +170,7 @@ public:
 
       thisNode->AddDefinedColumns(GetColRegister().GetNames());
       upmostNode->SetPrevNode(prevNode);
+
       return thisNode;
    }
 

@@ -37,6 +37,11 @@ std::shared_ptr<GraphNode> AddDefinesToGraph(std::shared_ptr<GraphNode> node,
                                              const RDFInternal::RColumnRegister &colRegister,
                                              const std::vector<std::string> &prevNodeDefines,
                                              std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap);
+
+std::shared_ptr<GraphNode> AddVariesToGraph(std::shared_ptr<GraphNode> node,
+                                            const RDFInternal::RColumnRegister &colRegister,
+                                            const std::vector<std::string> &prevNodeVaries,
+                                            std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap);
 } // namespace GraphDrawing
 
 // clang-format off
@@ -147,6 +152,7 @@ public:
       auto upmostNode = AddDefinesToGraph(thisNode, GetColRegister(), prevColumns, visitedMap);
 
       thisNode->AddDefinedColumns(GetColRegister().GetNames());
+      thisNode->AddVariedColumns(GetColRegister().GetNames());
       upmostNode->SetPrevNode(prevNode);
       return thisNode;
    }
