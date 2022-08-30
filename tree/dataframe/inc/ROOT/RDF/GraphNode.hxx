@@ -30,6 +30,7 @@ enum class ENodeType {
    kRange,
    kRoot,
    kUsedAction,
+   kVary,
 };
 
 class GraphCreatorHelper;
@@ -110,6 +111,14 @@ class GraphNode {
       fShape = "box";
    }
 
+   ////////////////////////////////////////////////////////////////////////////
+   /// \brief Gives a different shape based on the node type
+   void SetVary()
+   {
+      fColor = "#42def4";
+      fShape = "ellipse";
+   }
+
 public:
    ////////////////////////////////////////////////////////////////////////////
    /// \brief Creates a node with a name
@@ -122,6 +131,7 @@ public:
       case ENodeType::kRange: SetRange(); break;
       case ENodeType::kRoot: SetRoot(); break;
       case ENodeType::kUsedAction: SetAction(/*hasRun=*/true); break;
+      case ENodeType::kVary: SetVary(); break;
       };
    }
 

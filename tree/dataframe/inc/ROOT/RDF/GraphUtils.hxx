@@ -37,6 +37,10 @@ std::shared_ptr<GraphNode> CreateDefineNode(const std::string &columnName,
                                             const ROOT::Detail::RDF::RDefineBase *columnPtr,
                                             std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap);
 
+std::shared_ptr<GraphNode> CreateVaryNode(const std::string &columnName,
+                                          const ROOT::Detail::RDF::RDefineBase *columnPtr,
+                                          std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap);
+
 std::shared_ptr<GraphNode> CreateFilterNode(const ROOT::Detail::RDF::RFilterBase *filterPtr,
                                             std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap);
 

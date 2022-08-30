@@ -33,6 +33,21 @@ GraphDrawing::CreateDefineNode(const std::string &columnName, const ROOT::Detail
 }
 
 std::shared_ptr<GraphDrawing::GraphNode>
+GraphDrawing::CreateVaryNode(const std::string &columnName, const ROOT::Detail::RDF::RDefineBase *columnPtr,
+                               std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap)
+{
+   // If there is already a node for this vary (recognized by the custom column it is defining) return it. If there is
+   // not, return a new one.
+   auto duplicateVaryIt = visitedMap.find((void *)columnPtr);
+   if (duplicateVaryIt != visitedMap.end())
+      return duplicateVaryIt->second;
+
+   auto node = std::make_shared<GraphNode>("Vary\\n" + columnName, visitedMap.size(), ENodeType::kVary);
+   visitedMap[(void *)columnPtr] = node;
+   return node;
+}
+
+std::shared_ptr<GraphDrawing::GraphNode>
 GraphDrawing::CreateFilterNode(const ROOT::Detail::RDF::RFilterBase *filterPtr,
                                std::unordered_map<void *, std::shared_ptr<GraphNode>> &visitedMap)
 {
