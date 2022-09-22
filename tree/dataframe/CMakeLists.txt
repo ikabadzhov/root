@@ -33,6 +33,7 @@ endif(imt)
 
 ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
   HEADERS
+    ROOT/variant.hxx
     ROOT/RCsvDS.hxx
     ROOT/RDataFrame.hxx
     ROOT/RDataSource.hxx
@@ -74,6 +75,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     ROOT/RDF/RLazyDSImpl.hxx
     ROOT/RDF/RLoopManager.hxx
     ROOT/RDF/RMergeableValue.hxx
+    ROOT/RDF/RMetaData.hxx
     ROOT/RDF/RNodeBase.hxx
     ROOT/RDF/RRangeBase.hxx
     ROOT/RDF/RRange.hxx
@@ -110,6 +112,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     src/RJittedFilter.cxx
     src/RJittedVariation.cxx
     src/RLoopManager.cxx
+    src/RMetaData.cxx
     src/RRangeBase.cxx
     src/RVariationBase.cxx
     src/RVariationsDescription.cxx

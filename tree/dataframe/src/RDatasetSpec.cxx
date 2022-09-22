@@ -127,6 +127,102 @@ void RDatasetSpec::AddFriend(const std::vector<std::pair<std::string, std::strin
    fFriendInfo.AddFriend(treeAndFileNameGlobs, alias);
 }
 
+SpecBuilder::Group::Group(const std::string &name, Long64_t size, const RMetaData &metaData)
+   : fName(name), fSize(size), fMetaData(std::move(metaData))
+{
+}
+
+SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::string &treeName,
+                                   const std::string &fileNameGlob, const RMetaData &metaData)
+{
+   // adding a single fileglob/tree, hence extend the vectors with 1 elem
+   fTreeNames.reserve(fTreeNames.size() + 1);
+   fTreeNames.emplace_back(treeName);
+   fFileNameGlobs.reserve(fFileNameGlobs.size() + 1);
+   fFileNameGlobs.emplace_back(fileNameGlob);
+
+   fGroups.reserve(fGroups.size() + 1); // we are always adding a single group
+   // the group is of size 1, e.g. a single file glob
+   fGroups.emplace_back(Group(groupName, 1, metaData));
+
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::string &treeName,
+                                   const std::vector<std::string> &fileNameGlobs, const RMetaData &metaData)
+{
+   // this constructor expects 1 tree name and multiple file names
+   // however, in order to align many groups in TChain, we here copy the tree names multiple times
+   // e.g. for N files, we store N (repeating) tree names to keep the alignment
+   const auto nNewGlobs = fileNameGlobs.size();
+   fTreeNames.reserve(fTreeNames.size() + nNewGlobs);
+   for (auto i = 0u; i < nNewGlobs; ++i) // TODO: there might be a better intruction to do that
+      fTreeNames.emplace_back(treeName);
+   fFileNameGlobs.reserve(fFileNameGlobs.size() + nNewGlobs);
+   fFileNameGlobs.insert(std::end(fFileNameGlobs), std::begin(fileNameGlobs), std::end(fileNameGlobs));
+
+   fGroups.reserve(fGroups.size() + 1);
+   fGroups.emplace_back(Group(groupName, nNewGlobs, metaData)); // note that the group is of size nNewGlobs
+
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName,
+                                   const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
+                                   const RMetaData &metaData)
+{
+   const auto nNewGlobs = treeAndFileNameGlobs.size();
+   fTreeNames.reserve(nNewGlobs);
+   fFileNameGlobs.reserve(nNewGlobs);
+   for (auto &p : treeAndFileNameGlobs) {
+      fTreeNames.emplace_back(p.first);
+      fFileNameGlobs.emplace_back(p.second);
+   }
+
+   fGroups.reserve(fGroups.size() + 1);
+   fGroups.emplace_back(Group(groupName, nNewGlobs, metaData));
+
+   return *this;
+}
+
+SpecBuilder &
+SpecBuilder::WithFriends(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias)
+{
+   fFriendInfo.AddFriend(treeName, fileNameGlob, alias);
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::WithFriends(const std::string &treeName, const std::vector<std::string> &fileNameGlobs,
+                                      const std::string &alias)
+{
+   fFriendInfo.AddFriend(treeName, fileNameGlobs, alias);
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::WithFriends(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
+                                      const std::string &alias)
+{
+   fFriendInfo.AddFriend(treeAndFileNameGlobs, alias);
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::WithRange(const RDatasetSpec::REntryRange &entryRange)
+{
+   fEntryRange = entryRange;
+   return *this;
+}
+
+RDatasetSpec SpecBuilder::Build()
+{
+   // TODO: machanism to transfer friends from SpecBuilder to RDatasetSpec
+   std::vector<std::pair<std::string, std::string>> treeAndFileNameGlobs;
+   treeAndFileNameGlobs.reserve(fTreeNames.size());
+   std::transform(fTreeNames.begin(), fTreeNames.end(), fFileNameGlobs.begin(),
+                  std::back_inserter(treeAndFileNameGlobs),
+                  [](std::string t, std::string f) { return std::make_pair(t, f); });
+   return std::move(RDatasetSpec(treeAndFileNameGlobs, fEntryRange));
+}
+
 } // namespace Experimental
 } // namespace RDF
 } // namespace ROOT
