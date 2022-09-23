@@ -9,6 +9,7 @@
  *************************************************************************/
 
 #include "ROOT/RDF/RDatasetSpec.hxx"
+#include "ROOT/variant.hxx"
 #include <stdexcept> // std::logic_error
 
 namespace ROOT {
@@ -127,13 +128,14 @@ void RDatasetSpec::AddFriend(const std::vector<std::pair<std::string, std::strin
    fFriendInfo.AddFriend(treeAndFileNameGlobs, alias);
 }
 
-SpecBuilder::Group::Group(const std::string &name, Long64_t size, const RMetaData &metaData)
+SpecBuilder::Group::Group(const std::string &name, Long64_t size, const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData)
    : fName(name), fSize(size), fMetaData(std::move(metaData))
 {
 }
 
 SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::string &treeName,
-                                   const std::string &fileNameGlob, const RMetaData &metaData)
+                                   const std::string &fileNameGlob,
+                                   const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData)
 {
    // adding a single fileglob/tree, hence extend the vectors with 1 elem
    fTreeNames.reserve(fTreeNames.size() + 1);
@@ -149,7 +151,8 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::stri
 }
 
 SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::string &treeName,
-                                   const std::vector<std::string> &fileNameGlobs, const RMetaData &metaData)
+                                   const std::vector<std::string> &fileNameGlobs,
+                                   const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData)
 {
    // this constructor expects 1 tree name and multiple file names
    // however, in order to align many groups in TChain, we here copy the tree names multiple times
@@ -169,7 +172,7 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::stri
 
 SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName,
                                    const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
-                                   const RMetaData &metaData)
+                                   const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData)
 {
    const auto nNewGlobs = treeAndFileNameGlobs.size();
    fTreeNames.reserve(nNewGlobs);

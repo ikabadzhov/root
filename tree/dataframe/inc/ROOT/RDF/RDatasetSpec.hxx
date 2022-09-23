@@ -20,6 +20,8 @@
 #include <ROOT/RDF/RMetaData.hxx>     // RMetaData
 #include <RtypesCore.h>               // Long64_t
 
+//#include <ROOT/variant.hxx>
+
 namespace ROOT {
 
 namespace Detail {
@@ -91,24 +93,26 @@ class SpecBuilder {
    // 2. there is 1:1 correspondence between group and meta data => group and metadata can go together
    // Current solution: create a simple struct to hold the triplet {groupName, groupSize, MetaData}
    // This Group structure does not need an exposure to the user.
+public: // TODO: make private, now is public for test purposes only!
    struct Group {
       std::string fName;
       Long64_t fSize;      // the matching between fileGlobs and group sizes is relative!
-      RMetaData fMetaData; // behaves like a heterogenuous dictionary
-      Group(const std::string &name, Long64_t size, const RMetaData &metaData);
+      std::unordered_map<std::string, mpark::variant<int, float, std::string>> fMetaData; // behaves like a heterogenuous dictionary
+      Group(const std::string &name, Long64_t size, const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
    };
    std::vector<Group> fGroups;
 
 public:
    SpecBuilder &AddGroup(const std::string &groupName, const std::string &treeName, const std::string &fileNameGlob,
-                         const RMetaData &metaData);
+                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
 
    SpecBuilder &AddGroup(const std::string &groupName, const std::string &treeName,
-                         const std::vector<std::string> &fileNameGlobs, const RMetaData &metaData);
+                         const std::vector<std::string> &fileNameGlobs,
+                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
 
    SpecBuilder &AddGroup(const std::string &groupName,
                          const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
-                         const RMetaData &metaData);
+                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
 
    SpecBuilder &
    WithFriends(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias = "");

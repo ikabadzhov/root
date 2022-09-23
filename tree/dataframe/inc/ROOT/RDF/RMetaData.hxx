@@ -22,13 +22,18 @@ namespace Experimental {
 
 // TODO: use the backported std::variant, might also need std::reference_wrapper and std::visit
 class RMetaData {
-   std::unordered_map<std::string, std::string> fContainer;
+   std::unordered_map<std::string, mpark::variant<int, float, std::string>> fContainer;
 
 public:
-   RMetaData(std::unordered_map<std::string, std::string> &metaData);
+   RMetaData();
+
+   // Python does not understand the variant now, hence hide it from it!
+   RMetaData &AddMetaData(const std::string &category, int value);
+   RMetaData &AddMetaData(const std::string &category, float value);
+   RMetaData &AddMetaData(const std::string &category, const std::string &value);
 
    // overload the square brackets
-   std::string &operator[](std::string key);
+   mpark::variant<int, float, std::string> &operator[](std::string key);
 };
 
 } // namespace Experimental

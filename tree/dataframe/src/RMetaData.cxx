@@ -14,9 +14,24 @@ namespace ROOT {
 namespace RDF {
 namespace Experimental {
 
-RMetaData::RMetaData(std::unordered_map<std::string, std::string> &metaData) : fContainer(metaData) {}
+RMetaData::RMetaData() {}
 
-std::string &RMetaData::operator[](std::string key)
+RMetaData &RMetaData::AddMetaData(const std::string &category, int value) {
+   fContainer[category] = value;
+   return *this;
+}
+
+RMetaData &RMetaData::AddMetaData(const std::string &category, float value) {
+   fContainer[category] = value;
+   return *this;
+}
+
+RMetaData &RMetaData::AddMetaData(const std::string &category, const std::string &value) {
+   fContainer[category] = value;
+   return *this;
+}
+
+mpark::variant<int, float, std::string> &RMetaData::operator[](std::string key)
 {
    // TODO: maybe sanity checks
    return fContainer[key];
