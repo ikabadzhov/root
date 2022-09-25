@@ -33,7 +33,10 @@ public:
    RMetaData &AddMetaData(const std::string &category, const std::string &value);
 
    // overload the square brackets
-   mpark::variant<int, float, std::string> &operator[](std::string key);
+   mpark::variant<int, float, std::string> &operator[](const std::string &key);
+
+   template <typename T>
+   T Get(const std::string &key);
 };
 
 } // namespace Experimental

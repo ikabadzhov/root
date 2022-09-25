@@ -31,10 +31,15 @@ RMetaData &RMetaData::AddMetaData(const std::string &category, const std::string
    return *this;
 }
 
-mpark::variant<int, float, std::string> &RMetaData::operator[](std::string key)
+mpark::variant<int, float, std::string> &RMetaData::operator[](const std::string &key)
 {
    // TODO: maybe sanity checks
    return fContainer[key];
+}
+
+template <typename T>
+T RMetaData::Get(const std::string &key) {
+   return mpark::get<T>(fContainer[key]);
 }
 
 } // namespace Experimental
