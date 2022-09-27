@@ -10,36 +10,56 @@
 
 #include "ROOT/RDF/RMetaData.hxx"
 
+#include <iostream>
+
 namespace ROOT {
 namespace RDF {
 namespace Experimental {
 
-RMetaData::RMetaData() {}
-
-RMetaData &RMetaData::AddMetaData(const std::string &category, int value) {
-   fContainer[category] = value;
-   return *this;
-}
-
-RMetaData &RMetaData::AddMetaData(const std::string &category, float value) {
-   fContainer[category] = value;
-   return *this;
-}
-
-RMetaData &RMetaData::AddMetaData(const std::string &category, const std::string &value) {
-   fContainer[category] = value;
-   return *this;
-}
-
-mpark::variant<int, float, std::string> &RMetaData::operator[](const std::string &key)
+void RMetaData::AddMetaData(const std::string &cat, int val)
 {
-   // TODO: maybe sanity checks
-   return fContainer[key];
+   fJson[cat] = val;
+}
+
+void RMetaData::AddMetaData(const std::string &cat, double val)
+{
+   fJson[cat] = val;
+}
+
+void RMetaData::AddMetaData(const std::string &cat, const std::string &val)
+{
+   fJson[cat] = val;
+}
+
+void RMetaData::AddMetaData(const nlohmann::json &val)
+{
+   fJson.insert(val.begin(), val.end());
+}
+
+void RMetaData::PrintMetaData()
+{
+   std::cout << fJson.dump() << std::endl;
+}
+
+int RMetaData::GetI(const std::string &cat)
+{
+   return fJson[cat].get<int>();
+}
+
+double RMetaData::GetD(const std::string &cat)
+{
+   return fJson[cat].get<double>();
+}
+
+std::string RMetaData::GetS(const std::string &cat)
+{
+   return fJson[cat].get<std::string>();
 }
 
 template <typename T>
-T RMetaData::Get(const std::string &key) {
-   return mpark::get<T>(fContainer[key]);
+T RMetaData::Get(const std::string &cat)
+{
+   return fJson[cat].get<T>();
 }
 
 } // namespace Experimental

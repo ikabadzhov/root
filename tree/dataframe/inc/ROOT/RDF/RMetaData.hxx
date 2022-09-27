@@ -11,7 +11,7 @@
 #ifndef ROOT_RDF_RMETADATA
 #define ROOT_RDF_RMETADATA
 
-#include <ROOT/variant.hxx> // std::variant backport
+#include <nlohmann/json.hpp>
 
 #include <string>
 #include <unordered_map>
@@ -20,23 +20,25 @@ namespace ROOT {
 namespace RDF {
 namespace Experimental {
 
-// TODO: use the backported std::variant, might also need std::reference_wrapper and std::visit
 class RMetaData {
-   std::unordered_map<std::string, mpark::variant<int, float, std::string>> fContainer;
+   nlohmann::json fJson;
 
 public:
-   RMetaData();
+   void AddMetaData(const std::string &cat, int val);
+   void AddMetaData(const std::string &cat, double val);
+   void AddMetaData(const std::string &cat, const std::string &val);
+   void AddMetaData(const nlohmann::json &val);
 
-   // Python does not understand the variant now, hence hide it from it!
-   RMetaData &AddMetaData(const std::string &category, int value);
-   RMetaData &AddMetaData(const std::string &category, float value);
-   RMetaData &AddMetaData(const std::string &category, const std::string &value);
+   void PrintMetaData();
 
-   // overload the square brackets
-   mpark::variant<int, float, std::string> &operator[](const std::string &key);
+   int GetI(const std::string &cat);
+
+   double GetD(const std::string &cat);
+
+   std::string GetS(const std::string &cat);
 
    template <typename T>
-   T Get(const std::string &key);
+   T Get(const std::string &cat);
 };
 
 } // namespace Experimental

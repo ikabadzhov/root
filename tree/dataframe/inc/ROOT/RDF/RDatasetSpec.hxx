@@ -97,22 +97,21 @@ public: // TODO: make private, now is public for test purposes only!
    struct Group {
       std::string fName;
       Long64_t fSize;      // the matching between fileGlobs and group sizes is relative!
-      std::unordered_map<std::string, mpark::variant<int, float, std::string>> fMetaData; // behaves like a heterogenuous dictionary
-      Group(const std::string &name, Long64_t size, const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
+      RMetaData fMetaData; // behaves like a heterogenuous dictionary
+      Group(const std::string &name, Long64_t size, const RMetaData &metaData);
    };
    std::vector<Group> fGroups;
 
 public:
    SpecBuilder &AddGroup(const std::string &groupName, const std::string &treeName, const std::string &fileNameGlob,
-                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
+                         const RMetaData &metaData);
 
    SpecBuilder &AddGroup(const std::string &groupName, const std::string &treeName,
-                         const std::vector<std::string> &fileNameGlobs,
-                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
+                         const std::vector<std::string> &fileNameGlobs, const RMetaData &metaData);
 
    SpecBuilder &AddGroup(const std::string &groupName,
                          const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
-                         const std::unordered_map<std::string, mpark::variant<int, float, std::string>> &metaData);
+                         const RMetaData &metaData);
 
    SpecBuilder &
    WithFriends(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias = "");

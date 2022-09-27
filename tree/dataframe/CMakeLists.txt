@@ -33,7 +33,6 @@ endif(imt)
 
 ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
   HEADERS
-    ROOT/variant.hxx
     ROOT/RCsvDS.hxx
     ROOT/RDataFrame.hxx
     ROOT/RDataSource.hxx
@@ -149,6 +148,10 @@ endif(root7)
 
 if(MSVC)
   target_compile_definitions(ROOTDataFrame PRIVATE _USE_MATH_DEFINES)
+endif()
+
+if(builtin_nlohmannjson)
+  target_include_directories(ROOTDataFrame PRIVATE ${CMAKE_SOURCE_DIR}/builtins)
 endif()
 
 ROOT_ADD_TEST_SUBDIRECTORY(test)
