@@ -16,9 +16,9 @@
 #include <utility> // std::pair
 #include <vector>
 
-#include <ROOT/InternalTreeUtils.hxx> // ROOT::Internal::TreeUtils::RFriendInfo
-#include <ROOT/RDF/RMetaData.hxx>     // RMetaData
-#include <RtypesCore.h>               // Long64_t
+#include "ROOT/InternalTreeUtils.hxx" // ROOT::Internal::TreeUtils::RFriendInfo
+#include "ROOT/RDF/RMetaData.hxx"     // RMetaData
+#include "RtypesCore.h"               // Long64_t
 
 //#include <ROOT/variant.hxx>
 
@@ -75,33 +75,31 @@ private:
    std::vector<std::string> fFileNameGlobs;
    REntryRange fEntryRange; ///< Start (inclusive) and end (exclusive) entry for the dataset processing
    ROOT::Internal::TreeUtils::RFriendInfo fFriendInfo; ///< List of friends
-   std::vector<Group> fGroups; ////< List of groups
+   std::vector<Group> fGroups;                         ////< List of groups
 
 public:
-   RDatasetSpec(const std::vector<std::string> &trees,
-                const std::vector<std::string> &fileGlobs,
-                const std::vector<Group> &groups = {},
-                const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo = {},
+   RDatasetSpec(const std::vector<std::string> &trees, const std::vector<std::string> &fileGlobs,
+                const std::vector<Group> &groups = {}, const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo = {},
                 const REntryRange &entryRange = {});
+   /*
+   public:
+      RDatasetSpec(const std::string &treeName, const std::string &fileNameGlob, const REntryRange &entryRange = {});
 
-/*
-public:
-   RDatasetSpec(const std::string &treeName, const std::string &fileNameGlob, const REntryRange &entryRange = {});
+      RDatasetSpec(const std::string &treeName, const std::vector<std::string> &fileNameGlobs,
+                   const REntryRange &entryRange = {});
 
-   RDatasetSpec(const std::string &treeName, const std::vector<std::string> &fileNameGlobs,
-                const REntryRange &entryRange = {});
+      RDatasetSpec(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
+                   const REntryRange &entryRange = {});
 
-   RDatasetSpec(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
-                const REntryRange &entryRange = {});
+      void AddFriend(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias = "");
 
-   void AddFriend(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias = "");
+      void
+      AddFriend(const std::string &treeName, const std::vector<std::string> &fileNameGlobs, const std::string &alias =
+   "");
 
-   void
-   AddFriend(const std::string &treeName, const std::vector<std::string> &fileNameGlobs, const std::string &alias = "");
-
-   void AddFriend(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
-                  const std::string &alias = "");
-*/
+      void AddFriend(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
+                     const std::string &alias = "");
+   */
 };
 
 // TODO: this can be derived from RDatasetSpec, hence remove the first 4 members, and Build() would "simply cast"
@@ -123,6 +121,9 @@ public:
                          const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
                          const RMetaData &metaData);
 
+   SpecBuilder &AddGroup(const std::string &groupName, const std::vector<std::string> &trees,
+                         const std::vector<std::string> &files, const RMetaData &metaData);
+
    SpecBuilder &
    WithFriends(const std::string &treeName, const std::string &fileNameGlob, const std::string &alias = "");
 
@@ -130,6 +131,9 @@ public:
                             const std::string &alias = "");
 
    SpecBuilder &WithFriends(const std::vector<std::pair<std::string, std::string>> &treeAndFileNameGlobs,
+                            const std::string &alias = "");
+
+   SpecBuilder &WithFriends(const std::vector<std::string> &trees, const std::vector<std::string> &files,
                             const std::string &alias = "");
 
    SpecBuilder &WithRange(const RDatasetSpec::REntryRange &entryRange = {});

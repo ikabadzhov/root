@@ -133,10 +133,8 @@ RDatasetSpec::Group::Group(const std::string &name, Long64_t size, const RMetaDa
 {
 }
 
-RDatasetSpec::RDatasetSpec(const std::vector<std::string> &trees,
-                           const std::vector<std::string> &fileGlobs,
-                           const std::vector<Group> &groups,
-                           const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo,
+RDatasetSpec::RDatasetSpec(const std::vector<std::string> &trees, const std::vector<std::string> &fileGlobs,
+                           const std::vector<Group> &groups, const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo,
                            const REntryRange &entryRange)
    : fTreeNames(trees), fFileNameGlobs(fileGlobs), fEntryRange(entryRange), fFriendInfo(friendInfo), fGroups(groups)
 {
@@ -172,7 +170,8 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::stri
    fFileNameGlobs.insert(std::end(fFileNameGlobs), std::begin(fileNameGlobs), std::end(fileNameGlobs));
 
    fGroups.reserve(fGroups.size() + 1);
-   fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData)); // note that the group is of size nNewGlobs
+   fGroups.emplace_back(
+      RDatasetSpec::Group(groupName, nNewGlobs, metaData)); // note that the group is of size nNewGlobs
 
    return *this;
 }
@@ -192,6 +191,20 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName,
    fGroups.reserve(fGroups.size() + 1);
    fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData));
 
+   return *this;
+}
+
+SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::vector<std::string> &trees,
+                                   const std::vector<std::string> &files, const RMetaData &metaData)
+{
+   // TODO: sanity  check for vector sizes
+   const auto nNewGlobs = files.size();
+   fTreeNames.reserve(fTreeNames.size() + nNewGlobs);
+   fFileNameGlobs.reserve(fFileNameGlobs.size() + nNewGlobs);
+   fTreeNames.insert(std::end(fTreeNames), std::begin(trees), std::end(trees));
+   fFileNameGlobs.insert(std::end(fFileNameGlobs), std::begin(files), std::end(files));
+   fGroups.reserve(fGroups.size() + 1);
+   fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData));
    return *this;
 }
 
@@ -222,6 +235,17 @@ SpecBuilder &SpecBuilder::WithRange(const RDatasetSpec::REntryRange &entryRange)
    return *this;
 }
 
+SpecBuilder &SpecBuilder::WithFriends(const std::vector<std::string> &trees, const std::vector<std::string> &files,
+                                      const std::string &alias)
+{
+   std::vector<std::pair<std::string, std::string>> target;
+   target.reserve(files.size());
+   std::transform(trees.begin(), trees.end(), files.begin(), std::back_inserter(target),
+                  [](std::string a, std::string b) { return std::make_pair(a, b); });
+   fFriendInfo.AddFriend(target, alias);
+   return *this;
+}
+
 RDatasetSpec SpecBuilder::Build()
 {
    return std::move(RDatasetSpec(fTreeNames, fFileNameGlobs, fGroups, fFriendInfo, fEntryRange));
@@ -229,4 +253,7 @@ RDatasetSpec SpecBuilder::Build()
 
 } // namespace Experimental
 } // namespace RDF
+
+// RDataFrame RDataFrameFromJSON(const std::string &jsonFile)
+
 } // namespace ROOT

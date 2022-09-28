@@ -29,6 +29,8 @@ public:
    void AddMetaData(const std::string &cat, const std::string &val);
    void AddMetaData(const nlohmann::json &val);
 
+   void SetMeta(const std::string &cat, const nlohmann::json &val);
+
    void PrintMetaData();
 
    int GetI(const std::string &cat);

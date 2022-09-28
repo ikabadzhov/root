@@ -36,6 +36,11 @@ void RMetaData::AddMetaData(const nlohmann::json &val)
    fJson.insert(val.begin(), val.end());
 }
 
+void RMetaData::SetMeta(const std::string &cat, const nlohmann::json &val)
+{
+   fJson[cat] = val;
+}
+
 void RMetaData::PrintMetaData()
 {
    std::cout << fJson.dump() << std::endl;

@@ -88,6 +88,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     ROOT/RDF/Utils.hxx
     ROOT/RDF/PyROOTHelpers.hxx
     ROOT/RDF/RDFDescription.hxx
+    ROOT/RDF/RDFFromJSON.hxx
     ${RDATAFRAME_EXTRA_HEADERS}
   SOURCES
     src/RActionBase.cxx
@@ -118,6 +119,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(ROOTDataFrame
     src/RRootDS.cxx
     src/RTrivialDS.cxx
     src/RDFDescription.cxx
+    src/RDFFromJSON.cxx
   DICTIONARY_OPTIONS
     -writeEmptyRootPCM
     ${RDATAFRAME_EXTRA_INCLUDES}
