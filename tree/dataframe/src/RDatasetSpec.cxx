@@ -33,7 +33,7 @@ RDatasetSpec::REntryRange::REntryRange(Long64_t begin, Long64_t end) : fBegin(be
  * \ingroup dataframe
  * \brief A dataset specification for RDataFrame.
  **/
-
+/*
 ////////////////////////////////////////////////////////////////////////////
 /// \brief Construct an RDatasetSpec for one or more samples with the same tree name.
 /// \param[in] treeName Name of the tree
@@ -126,9 +126,19 @@ void RDatasetSpec::AddFriend(const std::vector<std::pair<std::string, std::strin
 {
    fFriendInfo.AddFriend(treeAndFileNameGlobs, alias);
 }
+*/
 
-SpecBuilder::Group::Group(const std::string &name, Long64_t size, const RMetaData &metaData)
+RDatasetSpec::Group::Group(const std::string &name, Long64_t size, const RMetaData &metaData)
    : fName(name), fSize(size), fMetaData(std::move(metaData))
+{
+}
+
+RDatasetSpec::RDatasetSpec(const std::vector<std::string> &trees,
+                           const std::vector<std::string> &fileGlobs,
+                           const std::vector<Group> &groups,
+                           const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo,
+                           const REntryRange &entryRange)
+   : fTreeNames(trees), fFileNameGlobs(fileGlobs), fEntryRange(entryRange), fFriendInfo(friendInfo), fGroups(groups)
 {
 }
 
@@ -143,7 +153,7 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::stri
 
    fGroups.reserve(fGroups.size() + 1); // we are always adding a single group
    // the group is of size 1, e.g. a single file glob
-   fGroups.emplace_back(Group(groupName, 1, metaData));
+   fGroups.emplace_back(RDatasetSpec::Group(groupName, 1, metaData));
 
    return *this;
 }
@@ -162,7 +172,7 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::stri
    fFileNameGlobs.insert(std::end(fFileNameGlobs), std::begin(fileNameGlobs), std::end(fileNameGlobs));
 
    fGroups.reserve(fGroups.size() + 1);
-   fGroups.emplace_back(Group(groupName, nNewGlobs, metaData)); // note that the group is of size nNewGlobs
+   fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData)); // note that the group is of size nNewGlobs
 
    return *this;
 }
@@ -180,7 +190,7 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName,
    }
 
    fGroups.reserve(fGroups.size() + 1);
-   fGroups.emplace_back(Group(groupName, nNewGlobs, metaData));
+   fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData));
 
    return *this;
 }
@@ -214,13 +224,7 @@ SpecBuilder &SpecBuilder::WithRange(const RDatasetSpec::REntryRange &entryRange)
 
 RDatasetSpec SpecBuilder::Build()
 {
-   // TODO: machanism to transfer friends from SpecBuilder to RDatasetSpec
-   std::vector<std::pair<std::string, std::string>> treeAndFileNameGlobs;
-   treeAndFileNameGlobs.reserve(fTreeNames.size());
-   std::transform(fTreeNames.begin(), fTreeNames.end(), fFileNameGlobs.begin(),
-                  std::back_inserter(treeAndFileNameGlobs),
-                  [](std::string t, std::string f) { return std::make_pair(t, f); });
-   return std::move(RDatasetSpec(treeAndFileNameGlobs, fEntryRange));
+   return std::move(RDatasetSpec(fTreeNames, fFileNameGlobs, fGroups, fFriendInfo, fEntryRange));
 }
 
 } // namespace Experimental
