@@ -372,12 +372,24 @@ RLoopManager::RLoopManager(ROOT::RDF::Experimental::RDatasetSpec &&spec)
      fNewSampleNotifier(fNSlots), fSampleInfos(fNSlots), fDatasetColumnReaders(fNSlots)
 {
 
-   auto chain = std::make_shared<TChain>(""); 
+   auto chain = std::make_shared<TChain>("");
+   auto lastGroupIdx = 0u;
+   auto initGroupSize = fGroupInfo.fSize[lastGroupIdx];
    for (auto i = 0u; i < spec.fFileNameGlobs.size(); i++) {
       // this is a workaround to be substituted with ?# once issue #11483 is resolved
       TChain tempChain{spec.fTreeNames[i].c_str()};
       tempChain.Add(spec.fFileNameGlobs[i].c_str());
-      chain->Add(&tempChain);
+      // update the size of the groups with the expanded globs
+      // example: g1 with 2 globs resolving in 3 and 4 files,
+      // and g2 with 2 globs resolving in 1 and 2 files
+      // chain->Add returns the number of files in the resolved expression,
+      // hence need to add number of resolved files - 1 tp the current group idx
+      fGroupInfo.fSize[lastGroupIdx] += chain->Add(&tempChain) - 1;
+      // we saved that the first group has 2 file globs, once each glob is evaluated,
+      // we need to identify that we have 1 less glob to go through from the current group
+      if (--initGroupSize == 0)
+         // once we went to the end of the current group, go to next group
+         initGroupSize = fGroupInfo.fSize[++lastGroupIdx];
    }
    SetTree(std::move(chain));
 
