@@ -366,24 +366,18 @@ RLoopManager::RLoopManager(std::unique_ptr<RDataSource> ds, const ColumnNames_t 
 }
 
 RLoopManager::RLoopManager(ROOT::RDF::Experimental::RDatasetSpec &&spec)
-   : fBeginEntry(spec.fEntryRange.fBegin), fEndEntry(spec.fEntryRange.fEnd), fNSlots(RDFInternal::GetNSlots()),
+   : fBeginEntry(spec.fEntryRange.fBegin), fEndEntry(spec.fEntryRange.fEnd),
+     fGroupInfo(spec.fGroupInfo), fNSlots(RDFInternal::GetNSlots()),
      fLoopType(ROOT::IsImplicitMTEnabled() ? ELoopType::kROOTFilesMT : ELoopType::kROOTFiles),
      fNewSampleNotifier(fNSlots), fSampleInfos(fNSlots), fDatasetColumnReaders(fNSlots)
 {
-   auto chain = std::make_shared<TChain>(spec.fTreeNames.size() == 1 ? spec.fTreeNames[0].c_str() : "");
-   if (spec.fTreeNames.size() == 1) {
-      // A TChain has a global name, that is the name of single tree
-      // The global name of the chain is also the name of each tree in the list
-      // of files that make the chain.
-      for (const auto &f : spec.fFileNameGlobs)
-         chain->Add(f.c_str());
-   } else {
-      // Some other times, each different file has its own tree name, we need to
-      // reconstruct the full path to the tree in each file and pass that to
-      for (auto i = 0u; i < spec.fFileNameGlobs.size(); i++) {
-         const auto fullpath = spec.fFileNameGlobs[i] + "?#" + spec.fTreeNames[i];
-         chain->Add(fullpath.c_str());
-      }
+
+   auto chain = std::make_shared<TChain>(""); 
+   for (auto i = 0u; i < spec.fFileNameGlobs.size(); i++) {
+      // this is a workaround to be substituted with ?# once issue #11483 is resolved
+      TChain tempChain{spec.fTreeNames[i].c_str()};
+      tempChain.Add(spec.fFileNameGlobs[i].c_str());
+      chain->Add(&tempChain);
    }
    SetTree(std::move(chain));
 
@@ -412,7 +406,10 @@ RLoopManager::RLoopManager(ROOT::RDF::Experimental::RDatasetSpec &&spec)
          // Otherwise, the new friend chain needs to be built using the nomenclature
          // "filename?#treename" as argument to `TChain::Add`
          for (auto j = 0u; j < nFileNames; ++j) {
-            frChain->Add((thisFriendFiles[j] + "?#" + thisFriendChainSubNames[j]).c_str());
+            // this is a workaround to be substituted with ?# once issue #11483 is resolved
+            TChain tempChain{thisFriendChainSubNames[i].c_str()};
+            tempChain.Add(thisFriendFiles[i].c_str());
+            frChain->Add(&tempChain);
          }
       }
 

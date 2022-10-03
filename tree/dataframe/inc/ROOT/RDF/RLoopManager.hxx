@@ -125,7 +125,7 @@ class RLoopManager : public RNodeBase {
    Long64_t fBeginEntry{0};
    Long64_t fEndEntry{std::numeric_limits<Long64_t>::max()};
    std::vector<std::unique_ptr<TTree>> fFriends; ///< Friends of the fTree. Only used if we constructed fTree ourselves.
-   //ROOT::Internal::TreeUtils::RFriendInfo fFriendInfo;
+   ROOT::RDF::Experimental::RDatasetSpec::GroupInfo fGroupInfo;
    const ColumnNames_t fDefaultColumns;
    const ULong64_t fNEmptyEntries{0};
    const unsigned int fNSlots{1};
