@@ -197,11 +197,16 @@ SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName,
 SpecBuilder &SpecBuilder::AddGroup(const std::string &groupName, const std::vector<std::string> &trees,
                                    const std::vector<std::string> &files, const RMetaData &metaData)
 {
-   // TODO: sanity  check for vector sizes
    const auto nNewGlobs = files.size();
+   if (trees.size() != 1 && trees.size() != nNewGlobs)
+      throw std::logic_error("Mismatch between number of trees and file globs.");
    fTreeNames.reserve(fTreeNames.size() + nNewGlobs);
    fFileNameGlobs.reserve(fFileNameGlobs.size() + nNewGlobs);
-   fTreeNames.insert(std::end(fTreeNames), std::begin(trees), std::end(trees));
+   if (trees.size() == 1)
+      for (auto i = 0u; i < nNewGlobs; ++i)
+         fTreeNames.insert(std::end(fTreeNames), std::begin(trees), std::end(trees));
+   else
+      fTreeNames.insert(std::end(fTreeNames), std::begin(trees), std::end(trees));
    fFileNameGlobs.insert(std::end(fFileNameGlobs), std::begin(files), std::end(files));
    fGroups.reserve(fGroups.size() + 1);
    fGroups.emplace_back(RDatasetSpec::Group(groupName, nNewGlobs, metaData));
