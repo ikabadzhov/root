@@ -53,11 +53,12 @@ public:
    // Current solution: create a simple struct to hold the triplet {groupName, groupSize, MetaData}
    // This Group structure does not need an exposure to the user.
 public: // TODO: make private, now is public for test purposes only!
-   struct Group {
-      std::string fName;
-      Long64_t fSize;      // the matching between fileGlobs and group sizes is relative!
-      RMetaData fMetaData; // behaves like a heterogenuous dictionary
-      Group(const std::string &name, Long64_t size, const RMetaData &metaData);
+   struct GroupInfo {
+      std::vector<std::string> fName;
+      std::vector<Long64_t> fSize;      // the matching between fileGlobs and group sizes is relative!
+      std::vector<RMetaData> fMetaData; // behaves like a heterogenuous dictionary
+      //Group(const std::string &name, Long64_t size, const RMetaData &metaData);
+      void AddGroupInfo(const std::string &name, Long64_t size, const RMetaData &metaData);
    };
 
 private:
@@ -75,11 +76,11 @@ private:
    std::vector<std::string> fFileNameGlobs;
    REntryRange fEntryRange; ///< Start (inclusive) and end (exclusive) entry for the dataset processing
    ROOT::Internal::TreeUtils::RFriendInfo fFriendInfo; ///< List of friends
-   std::vector<Group> fGroups;                         ////< List of groups
+   GroupInfo fGroupInfo;                               ///< List of groups
 
 public:
    RDatasetSpec(const std::vector<std::string> &trees, const std::vector<std::string> &fileGlobs,
-                const std::vector<Group> &groups = {}, const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo = {},
+                const GroupInfo &groupInfo = {}, const ROOT::Internal::TreeUtils::RFriendInfo &friendInfo = {},
                 const REntryRange &entryRange = {});
    /*
    public:
@@ -108,7 +109,7 @@ class SpecBuilder {
    std::vector<std::string> fFileNameGlobs;            // for all groups, groups come one after another
    RDatasetSpec::REntryRange fEntryRange;              // global! range
    ROOT::Internal::TreeUtils::RFriendInfo fFriendInfo; // global! friends
-   std::vector<RDatasetSpec::Group> fGroups;
+   RDatasetSpec::GroupInfo fGroupInfo;
 
 public:
    SpecBuilder &AddGroup(const std::string &groupName, const std::string &treeName, const std::string &fileNameGlob,
