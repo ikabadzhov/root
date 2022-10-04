@@ -391,6 +391,9 @@ RLoopManager::RLoopManager(ROOT::RDF::Experimental::RDatasetSpec &&spec)
          // once we went to the end of the current group, go to next group
          initGroupSize = fGroupInfo.fSize[++lastGroupIdx];
    }
+   // TODO: I know how to do it smarter but I need to test boundary conditions
+   for (auto i = 1u; i < fGroupInfo.fSize.size(); ++i)
+      fGroupInfo.fSize[i] += fGroupInfo.fSize[i - 1];
    SetTree(std::move(chain));
 
    // Create the friends from the list of friends
@@ -717,8 +720,14 @@ void RLoopManager::UpdateSampleInfo(unsigned int slot, const std::pair<ULong64_t
 }
 
 void RLoopManager::UpdateSampleInfo(unsigned int slot, TTreeReader &r) {
-   // one GetTree to retrieve the TChain, another to retrieve the underlying TTree
-   auto *tree = r.GetTree()->GetTree();
+   auto *chain = r.GetTree(); // retrieve the TChain
+   const auto treePosition = chain->GetTreeNumber(); // retrieve the position of the underlying TTree
+   const auto groupPosition = std::distance(fGroupInfo.fSize.begin(), std::upper_bound(fGroupInfo.fSize.begin(), fGroupInfo.fSize.end(), treePosition));
+   std::cout << "slot: " << slot << " tp:" << treePosition << " gp: " << groupPosition << std::endl;
+
+
+
+   auto *tree = chain->GetTree(); // retrieve the underlying TTree
    R__ASSERT(tree != nullptr);
    const std::string treename = ROOT::Internal::TreeUtils::GetTreeFullPaths(*tree)[0];
    auto *file = tree->GetCurrentFile();
@@ -731,7 +740,7 @@ void RLoopManager::UpdateSampleInfo(unsigned int slot, TTreeReader &r) {
       range.second = tree->GetEntries(); // convert '-1', i.e. 'until the end', to the actual entry number
    }
 
-   fSampleInfos[slot] = RSampleInfo(fname + "/" + treename, range);
+   fSampleInfos[slot] = RSampleInfo(fname + "/" + treename, range, fGroupInfo.fMetaData[groupPosition]);
 }
 
 /// Initialize all nodes of the functional graph before running the event loop.

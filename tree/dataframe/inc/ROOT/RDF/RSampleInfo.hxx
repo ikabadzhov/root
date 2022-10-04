@@ -13,6 +13,7 @@
 
 #include <ROOT/RStringView.hxx>
 #include <Rtypes.h>
+#include <ROOT/RDF/RMetaData.hxx>
 
 #include <functional>
 #include <stdexcept>
@@ -32,10 +33,17 @@ namespace RDF {
 class RSampleInfo {
    std::string fID;
    std::pair<ULong64_t, ULong64_t> fEntryRange;
+   ROOT::RDF::Experimental::RMetaData fMetaData;
+
 
 public:
    explicit RSampleInfo(std::string_view id, std::pair<ULong64_t, ULong64_t> entryRange)
       : fID(id), fEntryRange(entryRange)
+   {
+   }
+   explicit RSampleInfo(std::string_view id, std::pair<ULong64_t, ULong64_t> entryRange,
+                        const ROOT::RDF::Experimental::RMetaData &metaData)
+      : fID(id), fEntryRange(entryRange), fMetaData(metaData)
    {
    }
    RSampleInfo() = default;
@@ -44,6 +52,10 @@ public:
    RSampleInfo(RSampleInfo &&) = default;
    RSampleInfo &operator=(RSampleInfo &&) = default;
    ~RSampleInfo() = default;
+
+   const ROOT::RDF::Experimental::RMetaData &GetMetaData() const {
+      return fMetaData;
+   }
 
    /// Check whether the sample name contains the given substring.
    bool Contains(std::string_view substr) const

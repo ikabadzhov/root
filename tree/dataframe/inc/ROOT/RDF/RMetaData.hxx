@@ -14,7 +14,6 @@
 #include <nlohmann/json.hpp>
 
 #include <string>
-#include <unordered_map>
 
 namespace ROOT {
 namespace RDF {
@@ -33,11 +32,11 @@ public:
 
    void PrintMetaData();
 
-   int GetI(const std::string &cat);
+   int GetI(const std::string &cat) const;
 
-   double GetD(const std::string &cat);
+   double GetD(const std::string &cat) const;
 
-   std::string GetS(const std::string &cat);
+   std::string GetS(const std::string &cat) const;
 
    template <typename T>
    T Get(const std::string &cat);

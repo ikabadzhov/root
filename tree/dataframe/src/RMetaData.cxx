@@ -46,17 +46,17 @@ void RMetaData::PrintMetaData()
    std::cout << fJson.dump() << std::endl;
 }
 
-int RMetaData::GetI(const std::string &cat)
+int RMetaData::GetI(const std::string &cat) const
 {
    return fJson[cat].get<int>();
 }
 
-double RMetaData::GetD(const std::string &cat)
+double RMetaData::GetD(const std::string &cat) const
 {
    return fJson[cat].get<double>();
 }
 
-std::string RMetaData::GetS(const std::string &cat)
+std::string RMetaData::GetS(const std::string &cat) const
 {
    return fJson[cat].get<std::string>();
 }
