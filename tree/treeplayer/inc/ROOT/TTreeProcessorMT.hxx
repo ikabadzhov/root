@@ -94,16 +94,21 @@ private:
    static unsigned int fgTasksPerWorkerHint;
 
    std::pair<Long64_t, Long64_t> fGlobalRange{0, std::numeric_limits<Long64_t>::max()};
+   bool fShouldRetrieveAllClusters{false};
 
 public:
    TTreeProcessorMT(std::string_view filename, std::string_view treename = "", UInt_t nThreads = 0u,
-                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()});
+                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()},
+                    bool shouldRetrieveAllClusters = false);
    TTreeProcessorMT(const std::vector<std::string_view> &filenames, std::string_view treename = "",
                     UInt_t nThreads = 0u,
-                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()});
-   TTreeProcessorMT(TTree &tree, const TEntryList &entries, UInt_t nThreads = 0u);
+                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()},
+                    bool shouldRetrieveAllClusters = false);
+   TTreeProcessorMT(TTree &tree, const TEntryList &entries, UInt_t nThreads = 0u,
+                    bool shouldRetrieveAllClusters = false);
    TTreeProcessorMT(TTree &tree, UInt_t nThreads = 0u,
-                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()});
+                    const std::pair<Long64_t, Long64_t> &globalRange = {0, std::numeric_limits<Long64_t>::max()},
+                    bool shouldRetrieveAllClusters = false);
 
    void Process(std::function<void(TTreeReader &)> func);
 

@@ -517,7 +517,7 @@ void RLoopManager::RunTreeProcessorMT()
    const auto &entryList = fTree->GetEntryList() ? *fTree->GetEntryList() : TEntryList();
    auto tp = (fBeginEntry != 0 || fEndEntry != std::numeric_limits<Long64_t>::max())
                 ? std::make_unique<ROOT::TTreeProcessorMT>(*fTree, fNSlots, std::make_pair(fBeginEntry, fEndEntry))
-                : std::make_unique<ROOT::TTreeProcessorMT>(*fTree, entryList, fNSlots);
+                : std::make_unique<ROOT::TTreeProcessorMT>(*fTree, entryList, fNSlots, &fGroupInfo != nullptr);
 
    std::atomic<ULong64_t> entryCount(0ull);
 
@@ -723,9 +723,6 @@ void RLoopManager::UpdateSampleInfo(unsigned int slot, TTreeReader &r) {
    auto *chain = r.GetTree(); // retrieve the TChain
    const auto treePosition = chain->GetTreeNumber(); // retrieve the position of the underlying TTree
    const auto groupPosition = std::distance(fGroupInfo.fSize.begin(), std::upper_bound(fGroupInfo.fSize.begin(), fGroupInfo.fSize.end(), treePosition));
-   std::cout << "slot: " << slot << " tp:" << treePosition << " gp: " << groupPosition << std::endl;
-
-
 
    auto *tree = chain->GetTree(); // retrieve the underlying TTree
    R__ASSERT(tree != nullptr);

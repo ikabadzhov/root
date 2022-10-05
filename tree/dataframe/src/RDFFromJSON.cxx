@@ -42,22 +42,25 @@ ROOT::RDataFrame MakeDataFrameFromJSON(const std::string &jsonFile)
          m.SetMeta(metadata.key(), metadata.value());
       specBuilder.AddGroup(tag, trees, files, m);
    }
-
-   for (const auto &friends : fullData["friends"].items()) {
-      std::string alias = friends.key();
-      std::vector<std::string> trees = friends.value()["trees"];
-      std::vector<std::string> files = friends.value()["files"];
-      if (files.size() != trees.size() && trees.size() > 1)
-         throw std::runtime_error("Mismatch between trees and files in a friend.");
-      specBuilder.WithFriends(trees, files, alias);
+   if (fullData.contains("friends")) {
+      for (const auto &friends : fullData["friends"].items()) {
+         std::string alias = friends.key();
+         std::vector<std::string> trees = friends.value()["trees"];
+         std::vector<std::string> files = friends.value()["files"];
+         if (files.size() != trees.size() && trees.size() > 1)
+            throw std::runtime_error("Mismatch between trees and files in a friend.");
+         specBuilder.WithFriends(trees, files, alias);
+      }
    }
 
-   std::vector<int> range = fullData["range"];
+   if (fullData.contains("range")) {
+      std::vector<int> range = fullData["range"];
 
-   if (range.size() == 1)
-      specBuilder.WithRange({range[0]});
-   else if (range.size() == 2)
-      specBuilder.WithRange({range[0], range[1]});
+      if (range.size() == 1)
+         specBuilder.WithRange({range[0]});
+      else if (range.size() == 2)
+         specBuilder.WithRange({range[0], range[1]});
+   }
    // specBuilder.Build();
    return ROOT::RDataFrame(specBuilder.Build());
 }

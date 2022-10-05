@@ -449,10 +449,10 @@ std::vector<std::string> TTreeProcessorMT::FindTreeNames()
 ///                     the same as for TThreadExecutor.
 /// \param[in] /// \param[in] globalRange Global entry range to process, {begin (inclusive), end (exclusive)}.
 TTreeProcessorMT::TTreeProcessorMT(std::string_view filename, std::string_view treename, UInt_t nThreads,
-                                   const EntryRange &globalRange)
+                                   const EntryRange &globalRange, bool shouldRetrieveAllClusters)
    : fFileNames({std::string(filename)}),
      fTreeNames(treename.empty() ? FindTreeNames() : std::vector<std::string>{std::string(treename)}), fFriendInfo(),
-     fPool(nThreads), fGlobalRange(globalRange)
+     fPool(nThreads), fGlobalRange(globalRange), fShouldRetrieveAllClusters(shouldRetrieveAllClusters)
 {
    ROOT::EnableThreadSafety();
 }
@@ -482,11 +482,11 @@ std::vector<std::string> CheckAndConvert(const std::vector<std::string_view> &vi
 /// (for example, because some of the files contain multiple TTrees) please manually create a TChain and pass
 /// it to the appropriate TTreeProcessorMT constructor.
 TTreeProcessorMT::TTreeProcessorMT(const std::vector<std::string_view> &filenames, std::string_view treename,
-                                   UInt_t nThreads, const EntryRange &globalRange)
+                                   UInt_t nThreads, const EntryRange &globalRange, bool shouldRetrieveAllClusters)
    : fFileNames(CheckAndConvert(filenames)),
      fTreeNames(treename.empty() ? FindTreeNames()
                                  : std::vector<std::string>(fFileNames.size(), std::string(treename))),
-     fFriendInfo(), fPool(nThreads), fGlobalRange(globalRange)
+     fFriendInfo(), fPool(nThreads), fGlobalRange(globalRange), fShouldRetrieveAllClusters(shouldRetrieveAllClusters)
 {
    ROOT::EnableThreadSafety();
 }
@@ -497,10 +497,12 @@ TTreeProcessorMT::TTreeProcessorMT(const std::vector<std::string_view> &filename
 /// \param[in] entries List of entry numbers to process.
 /// \param[in] nThreads Number of threads to create in the underlying thread-pool. The semantics of this argument are
 ///                     the same as for TThreadExecutor.
-TTreeProcessorMT::TTreeProcessorMT(TTree &tree, const TEntryList &entries, UInt_t nThreads)
+TTreeProcessorMT::TTreeProcessorMT(TTree &tree, const TEntryList &entries, UInt_t nThreads,
+                                   bool shouldRetrieveAllClusters)
    : fFileNames(Internal::TreeUtils::GetFileNamesFromTree(tree)),
      fTreeNames(Internal::TreeUtils::GetTreeFullPaths(tree)), fEntryList(entries),
-     fFriendInfo(Internal::TreeUtils::GetFriendInfo(tree)), fPool(nThreads)
+     fFriendInfo(Internal::TreeUtils::GetFriendInfo(tree)), fPool(nThreads),
+     fShouldRetrieveAllClusters(shouldRetrieveAllClusters)
 {
    ROOT::EnableThreadSafety();
 }
@@ -511,10 +513,11 @@ TTreeProcessorMT::TTreeProcessorMT(TTree &tree, const TEntryList &entries, UInt_
 /// \param[in] nThreads Number of threads to create in the underlying thread-pool. The semantics of this argument are
 ///                     the same as for TThreadExecutor.
 /// \param[in] globalRange Global entry range to process, {begin (inclusive), end (exclusive)}.
-TTreeProcessorMT::TTreeProcessorMT(TTree &tree, UInt_t nThreads, const EntryRange &globalRange)
+TTreeProcessorMT::TTreeProcessorMT(TTree &tree, UInt_t nThreads, const EntryRange &globalRange,
+                                   bool shouldRetrieveAllClusters)
    : fFileNames(Internal::TreeUtils::GetFileNamesFromTree(tree)),
      fTreeNames(Internal::TreeUtils::GetTreeFullPaths(tree)), fFriendInfo(Internal::TreeUtils::GetFriendInfo(tree)),
-     fPool(nThreads), fGlobalRange(globalRange)
+     fPool(nThreads), fGlobalRange(globalRange), fShouldRetrieveAllClusters(shouldRetrieveAllClusters)
 {
 }
 
@@ -548,7 +551,7 @@ void TTreeProcessorMT::Process(std::function<void(TTreeReader &)> func)
    // sub-entrylists.
    const bool hasFriends = !fFriendInfo.fFriendNames.empty();
    const bool hasEntryList = fEntryList.GetN() > 0;
-   const bool shouldRetrieveAllClusters = hasFriends || hasEntryList || fGlobalRange.first > 0 ||
+   const bool shouldRetrieveAllClusters = fShouldRetrieveAllClusters || hasFriends || hasEntryList || fGlobalRange.first > 0 ||
                                           fGlobalRange.second != std::numeric_limits<Long64_t>::max();
    ClustersAndEntries allClusterAndEntries{};
    auto &allClusters = allClusterAndEntries.first;
